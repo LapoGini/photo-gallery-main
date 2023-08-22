@@ -35,7 +35,7 @@
           Accuratezza posizione:
         </h5>
         <p>
-          {{ accuracy }}
+          {{ lowestAccuracy !== null ? lowestAccuracy : 'N/A' }}
         </p>
       </div>
       <div class="procedi-container">
@@ -47,6 +47,7 @@
         </router-link>
       </div>
     </ion-content>
+    <div class="toast-background" v-if="showToastBackground"></div>
   </ion-page>
 </template>
 
@@ -61,14 +62,14 @@ import { usePhotoGallery, UserPhoto } from '@/composables/usePhotoGallery';
 
 import { useNetwork } from '@/composables/useNetwork';
 
-const { networkStatus, logCurrentNetworkStatus } = useNetwork();
+const { networkStatus, logCurrentNetworkStatus, showToastBackground } = useNetwork();
 
 const getNetworkStatus = async () => {
   await logCurrentNetworkStatus();
 };
 
 // Destrutturare la funzione da in modo da poterla usare nel nostro :takePhotousePhotoGallerytemplate
-const { photos, takePhoto, accuracy } = usePhotoGallery();
+const { photos, takePhoto, accuracy, lowestAccuracy } = usePhotoGallery();
 
 import { ref, onMounted, watch } from 'vue';
 
@@ -179,5 +180,16 @@ ion-fab-button::part(native):active::after {
 
 .icon-tag {
   color: black;
+}
+
+.toast-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
 }
 </style>

@@ -22,6 +22,7 @@
         </router-link>
       </div>
     </ion-content>
+    <div class="toast-background" v-if="showToastBackground"></div>
   </ion-page>
 </template>
 
@@ -64,7 +65,7 @@ const getCaditoieScansionate = async () => {
 };
 
 
-const { networkStatus, logCurrentNetworkStatus } = useNetwork();
+const { networkStatus, logCurrentNetworkStatus, showToastBackground } = useNetwork();
 
 const getNetworkStatus = async () => {
   await logCurrentNetworkStatus();
@@ -128,5 +129,16 @@ ion-button {
   margin-top: 20px;
   --background: #A60016;
   font-weight: bolder;
+}
+
+.toast-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
 }
 </style>

@@ -19,6 +19,7 @@
         </router-link>
       </div>
     </ion-content>
+    <div class="toast-background" v-if="showToastBackground"></div>
   </ion-page>
 </template>
 
@@ -30,10 +31,40 @@ import { useNetwork } from '@/composables/useNetwork';
 import { ref, onMounted, watch } from 'vue';
 import axios from 'axios';
 import { useStore } from 'vuex';
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { Camera, CameraResultType } from '@capacitor/camera';
+import { Geolocation } from '@capacitor/geolocation';
+import { Capacitor } from '@capacitor/core';
+
+const requestCameraPermissions = async () => {
+  try {
+    const cameraPermission = await Camera.checkPermissions();
+    if (cameraPermission.camera !== 'granted') {
+      const { camera } = await Camera.requestPermissions();
+      if (camera !== 'granted') {
+        console.warn('Permessi per la fotocamera non concessi.');
+        return;
+      }
+    }
+  } catch (error) {
+    console.error('Errore durante la gestione della fotocamera:', error);
+  }
+};
+
+const requestLocationPermissions = async () => {
+  const locationPermission = await Geolocation.checkPermissions();
+    if (locationPermission.location !== 'granted') {
+      const { location } = await Geolocation.requestPermissions();
+      if (location !== 'granted') {
+        console.warn('Permessi per la posizione non concessi.');
+        return;
+      }
+    }
+}
 
 const store = useStore();
 
-const { networkStatus, logCurrentNetworkStatus } = useNetwork();
+const { networkStatus, logCurrentNetworkStatus, showToastBackground } = useNetwork();
 
 
 const getNetworkStatus = async () => {
@@ -49,6 +80,12 @@ watch(selectedClient, (newValue) => {
 
 onMounted(async () => {
   try {
+    await LocalNotifications.requestPermissions();
+    await requestCameraPermissions();
+    await requestLocationPermissions();
+    await logCurrentNetworkStatus();
+    
+
     const apiToken = store.getters.getApiToken;
     //const apiToken = localStorage.getItem('apiToken');
     console.log(apiToken);
@@ -63,8 +100,6 @@ onMounted(async () => {
     console.error('Errore durante la chiamata API:', error);
   }
 });
-
-
 
 </script>
 
@@ -120,5 +155,16 @@ ion-button {
   margin-top: 20px;
   --background: #A60016;
   font-weight: bolder;
+}
+
+.toast-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
 }
 </style>

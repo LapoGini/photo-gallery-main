@@ -47,6 +47,7 @@
         
       </div>
     </ion-content>
+    <div class="toast-background" v-if="showToastBackground"></div>
   </ion-page>
 </template>
 
@@ -57,6 +58,10 @@ import { IonPage, IonContent, IonButton, IonSelect, IonSelectOption, IonLabel, I
 import { ref, defineComponent, onMounted, watch, onBeforeUnmount } from 'vue';
 import axios from 'axios';
 import { useStore } from 'vuex';
+import { useNetwork } from '@/composables/useNetwork';
+
+const { networkStatus, logCurrentNetworkStatus, showToastBackground } = useNetwork();
+
 
 export default defineComponent({
   name: 'SceltaLuogo',
@@ -102,7 +107,8 @@ export default defineComponent({
       console.log('Via selezionata:', newValue);
     });
 
-    onMounted(() => {
+    onMounted(async () => {
+      await logCurrentNetworkStatus();
       fetchCities();
         restoreDataFromLocalStorage();
     });
@@ -241,5 +247,16 @@ ion-button {
   margin-top: 20px;
   --background: #A60016;
   font-weight: bolder;
+}
+
+.toast-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
 }
 </style>

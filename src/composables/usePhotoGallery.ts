@@ -92,12 +92,24 @@ export const usePhotoGallery = () => {
     };
 
     const accuracy = ref<string | number>('N/A');
+    const lowestAccuracy = ref<number | null>(null);
 
     const getRealTimeAccuracy = async () => {
       try {
         const coordinates = await getCurrentPosition();
-        accuracy.value = coordinates?.coords?.accuracy || 'N/A';
-        console.log(accuracy.value);
+        const currentAccuracy = coordinates?.coords?.accuracy;
+        
+        if (currentAccuracy !== null) {
+          accuracy.value = currentAccuracy;
+          console.log('accuracy', accuracy.value);
+          
+          if (lowestAccuracy.value === null || currentAccuracy < lowestAccuracy.value) {
+            lowestAccuracy.value = currentAccuracy;
+            console.log('lowest accuracy', lowestAccuracy.value);
+          }
+        } else {
+          accuracy.value = 'N/A';
+        }
       } catch (error) {
         console.error('Errore:', error);
         accuracy.value = 'N/A';
@@ -105,7 +117,7 @@ export const usePhotoGallery = () => {
     }
 
     const startAccuracyMonitoring = () => {
-      const intervalId = setInterval(getRealTimeAccuracy, 500);
+      const intervalId = setInterval(getRealTimeAccuracy, 1500);
       const stopMonitoring = () => clearInterval(intervalId);
       return stopMonitoring;
     }
@@ -207,7 +219,8 @@ export const usePhotoGallery = () => {
     return {
         photos,
         takePhoto,
-        accuracy, 
+        accuracy,
+        lowestAccuracy,
     };
 };
 
