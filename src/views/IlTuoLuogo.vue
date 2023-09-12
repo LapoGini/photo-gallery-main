@@ -3,16 +3,17 @@
     <ion-content>
       <div class="main-container">
         <h1>Il tuo luogo:</h1>
-        <h4>Nome comune
-            <br>
-            Nome strada (XX)
+        <h4>
+          {{ cityName }} ({{cityDistrict}})
+          <br>
+          {{ streetName }}
         </h4>
       </div>
       <div class="sub-container">
         <div class="grid-container">
           <div class="camera-box">
             <ion-fab>
-              <ion-fab-button @click="takePhoto()">
+              <ion-fab-button @click="handlePhoto()">
                 <ion-icon class="icon-tag" :icon="camera"></ion-icon>
               </ion-fab-button>
             </ion-fab>
@@ -30,22 +31,6 @@
           </div>
         </div>
       </div>
-      <div class="accuracy">
-        <h5>
-          Accuratezza posizione:
-        </h5>
-        <p>
-          {{ lowestAccuracy !== null ? lowestAccuracy : 'N/A' }}
-        </p>
-      </div>
-      <div class="procedi-container">
-        <router-link to="/ilTuoLuogo" class="router-a">
-          <ion-button>
-            PROCEDI
-            <ion-icon :icon="arrowRedoCircleSharp"></ion-icon>
-          </ion-button>
-        </router-link>
-      </div>
     </ion-content>
     <div class="toast-background" v-if="showToastBackground"></div>
   </ion-page>
@@ -57,21 +42,244 @@ import { IonPage, IonContent, IonIcon, IonButton, IonSelect, IonSelectOption, Io
 import { arrowRedoCircleSharp, arrowUndoOutline } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
 import { camera } from 'ionicons/icons';
-// sto importando la funzione usePhotoGallery per poterla attivare ed essa aprirà la fotocamera del dispositivo e ci permetterà di scattare foto.getPhoto()
 import { usePhotoGallery, UserPhoto } from '@/composables/usePhotoGallery';
-
+import { useStore } from 'vuex';
 import { useNetwork } from '@/composables/useNetwork';
+import { ref, onMounted, watch } from 'vue';
+import axios from 'axios';
+import { getCitiesFromDB } from '@/services/db_cities.js';
+import { getAllStreetsFromDB, getUnsynchronizedStreetsFromDB, saveStreetsToDB } from '@/services/db_streets.js';
+import { getItemsFromDB, deleteItemFromDB } from '@/services/db_items.js';
+import { deleteDB } from 'idb';
+
+
 
 const { networkStatus, logCurrentNetworkStatus, showToastBackground } = useNetwork();
+const router = useRouter();
+const store = useStore();
+const props = defineProps({
+  selectedCityName: String,
+  selectedStreetName: String
+});
+console.log('Nome Comune:', props.selectedCityName);
+console.log('Nome Strada:', props.selectedStreetName);
 
 const getNetworkStatus = async () => {
   await logCurrentNetworkStatus();
 };
 
-// Destrutturare la funzione da in modo da poterla usare nel nostro :takePhotousePhotoGallerytemplate
-const { photos, takePhoto, accuracy, lowestAccuracy } = usePhotoGallery();
+const handlePhoto = async () => {
+  const photo: UserPhoto = await takePhoto();
+  if (photo) { // Conferma foto scattata
+       localStorage.setItem('photoTimestamp', Date.now().toString());
+       localStorage.setItem('photoTitle', photo.title ? photo.title : 'N/A');
+       localStorage.setItem('photoAltitude', photo.coordinates?.coords?.altitude?.toString() || 'N/A');
+       localStorage.setItem('photoLatitude', photo.coordinates?.coords?.latitude?.toString() || 'N/A');
+       localStorage.setItem('photoLongitude', photo.coordinates?.coords?.longitude?.toString() || 'N/A');
+       localStorage.setItem('photoAccuracy', photo.coordinates?.coords?.accuracy?.toString() || 'N/A');
+       localStorage.setItem('photoPath', photo.filepath.toString() || 'N/A');
+       
+       // Navigare alla rotta successiva dopo aver confermato la foto
+       router.push('/fotoMap');
+   }
+};
 
-import { ref, onMounted, watch } from 'vue';
+const { photos, takePhoto, accuracy } = usePhotoGallery();
+const cities = ref([]);
+const streets = ref([]);
+const cityName = ref('');
+const cityDistrict = ref('');
+const streetName = ref('');
+
+const fetchCity = async () => {
+  try {
+    const apiToken = store.getters.getApiToken;
+    console.log(apiToken);
+    const response = await axios.get('https://rainwaterdrains.inyourlife.com/api/cities', {
+          headers: {
+            'Authorization': `Bearer ${apiToken}`
+      }
+    });
+    cities.value = response.data.data;
+    
+    console.log('LE CITTA CHE MI PIGLIO IN IL TUO LUOGO', cities.value);
+
+    const selectedCity = cities.value.find(({comune_id}) => comune_id == props.selectedCityName);
+
+    console.log('CITTA SELEZIONATA = ', selectedCity);
+
+    if (selectedCity) {
+      cityName.value = selectedCity.comune_nome;
+      cityDistrict.value = selectedCity.provincia_id;
+
+      console.log('Questo è il nome della citta:', cityName.value);
+      console.log('Questo è il nome del district:', cityDistrict.value);
+    }
+    
+
+  } catch (error) {
+    console.error('Errore durante il recupero delle città:', error);
+
+    cities.value = await getCitiesFromDB();
+
+    const selectedCity = cities.value.find(({comune_id}) => comune_id == props.selectedCityName);
+    if (selectedCity) {
+      cityName.value = selectedCity.comune_nome;
+      cityDistrict.value = selectedCity.provincia_id;
+    }
+
+  }
+};
+
+const fetchStreet = async () => {
+  try {
+    const apiToken = store.getters.getApiToken;
+    console.log(apiToken);
+    const response = await axios.get('https://rainwaterdrains.inyourlife.com/api/streets', {
+          headers: {
+            'Authorization': `Bearer ${apiToken}`
+      }
+    });
+      const streets = response.data.data;
+
+      console.log('LE VIE CHE MI PIGLIO', streets);
+
+      const selectedStreet = streets.find(({ id }) => id == props.selectedStreetName);
+
+      console.log('VIA SELEZIONATA = ', selectedStreet);
+
+
+      if (selectedStreet) {
+        streetName.value = selectedStreet.name;
+        console.log('Questo è il nome della via:', streetName.value);
+      } else {
+        // Se non è stata trovata una strada dalla richiesta iniziale, cerca in IndexedDB
+        streets.value = await getAllStreetsFromDB();
+        const dbSelectedStreet = streets.value.find(({ id }) => id == props.selectedStreetName);
+        
+        if (dbSelectedStreet) {
+          streetName.value = dbSelectedStreet.name;
+          console.log('Strada trovata nell\'IndexedDB:', streetName.value);
+        } else {
+          console.error('Strada non trovata né nella richiesta API né nell\'IndexedDB');
+        }
+      }
+      
+    } catch (error) {
+      console.error('Errore durante il recupero delle vie:', error);
+      
+      streets.value = await getAllStreetsFromDB();
+      const selectedStreet = streets.value.find(({ id }) => id == props.selectedStreetName);
+      if(selectedStreet) {
+        streetName.value = selectedStreet.name;
+      }
+    }
+};
+
+const fetchAllStreets = async () => {
+  console.log('Inizio fetchAllStreets');
+  try {
+    const apiToken = store.getters.getApiToken;
+    console.log(apiToken);
+    const response = await axios.get('https://rainwaterdrains.inyourlife.com/api/allStreets', {
+          headers: {
+            'Authorization': `Bearer ${apiToken}`
+      }
+    });
+    if (response.data) {
+      console.log(response.data);
+      await saveStreetsToDB(response.data.data);
+    }
+    } catch (error) {
+      console.error('Errore durante il recupero delle vie:', error);
+    }
+}
+async function deleteLocalDB() {
+    console.log('Inizio deleteLocalDB');
+    await deleteDB('rwd_streets');
+}
+
+const synchronizeItemsWithServer = async () => {
+    const unsynchronizedItems = await getItemsFromDB();
+    console.log('Items NON SINCRONIZZTi', unsynchronizedItems);
+    for (const item of unsynchronizedItems) {
+      console.log(item);
+        try {
+            const apiToken = store.getters.getApiToken;
+            const response = await axios.post('https://rainwaterdrains.inyourlife.com/api/item', item, {
+                headers: {
+                    'Authorization': `Bearer ${apiToken}`
+                },
+            });
+            //se l'item è stato aggiunto con successo, eliminare l'item dall'indexedDB
+            if (response.data) {
+              console.log('responde data degli items:', response.data.success.id_da_app);
+                // eliminare l'item da locale
+                await deleteItemFromDB(response.data.success.id_da_app);
+            }
+        } catch (error) {
+            console.error('Errore durante la sincronizzazione:', error);
+        }
+    }
+};
+
+const synchronizeStreetsWithServer = async () => {
+    const unsynchronizedStreets = await getUnsynchronizedStreetsFromDB();
+    console.log('Vie NON SINCRONIZZTE', unsynchronizedStreets);
+    for (const street of unsynchronizedStreets) {
+      console.log(street);
+        try {
+            const apiToken = store.getters.getApiToken;
+            const response = await axios.post('https://rainwaterdrains.inyourlife.com/api/aggiungiVia', {
+                headers: {
+                    'Authorization': `Bearer ${apiToken}`
+                },
+                id: street.id,
+                name: street.name,
+                city_id: street.city_id
+            });
+            // Se la strada è stata aggiunta con successo al DB, aggiornala come sincronizzata in IndexedDB
+            if (response.data.idNew) {
+                //await markStreetAsSynchronized(street.id, response.data.idNew);
+                console.log('STRADA SINCRONIZZATA CORRETTAMENTE', response.data.idNew);
+            }
+        } catch (error) {
+            console.error('Errore durante la sincronizzazione:', error);
+        }
+    }
+    console.log('FINE DEL CICLO');
+    try {
+        await deleteLocalDB();
+        console.log('ELIMINATE LE STRADE DALL\'INDEXEDDB');
+    } catch (error) {
+        console.error('Errore in deleteLocalDB:', error);
+    }
+
+    try {
+        await fetchAllStreets();
+        console.log('RIMESSE LE STRADE NALL\'INDEXEDDB');
+    } catch (error) {
+        console.error('Errore in fetchAllStreets:', error);
+    }
+
+    try {
+        await synchronizeItemsWithServer();
+        console.log('Items sincronizzati');
+    } catch (error) {
+        console.error('Errore in synchronizeItemsWithServer:', error);
+    }
+};
+
+
+onMounted( async () => {
+  fetchCity();
+  fetchStreet();
+
+  await logCurrentNetworkStatus();
+    if (networkStatus.value) {
+        await synchronizeStreetsWithServer();
+    }
+});
 
 </script>
 

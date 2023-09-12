@@ -8,6 +8,8 @@ import LocalNotification from '@/views/LocalNotification.vue';
 import IlTuoLuogo from '@/views/IlTuoLuogo.vue';
 import Sincro from '@/views/Sincro.vue';
 import Scansioni from '@/views/Scansioni.vue';
+import Specifiche from '@/views/Specifiche.vue';
+import FotoMap from '@/views/FotoMap.vue';
 
 
 const routes: Array<RouteRecordRaw> = [
@@ -22,9 +24,20 @@ const routes: Array<RouteRecordRaw> = [
     name: 'SceltaLuogo',
   },
   {
-    path: '/ilTuoLuogo',
+    path: '/ilTuoLuogo/:selectedCityName/:selectedStreetName',
     component: IlTuoLuogo,
     name: 'IlTuoLuogo',
+    props: true,
+  },
+  {
+    path: '/fotoMap',
+    component: FotoMap,
+    name: 'FotoMap',
+  },
+  {
+    path: '/specifiche',
+    component: Specifiche,
+    name: 'Specifiche',
   },
   {
     path: '/network',

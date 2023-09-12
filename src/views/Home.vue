@@ -11,12 +11,11 @@
             {{ client.name }}
           </ion-select-option>
         </ion-select>
-        <router-link to="/sceltaLuogo">
-          <ion-button>
+        <!-- Verifica se soo state consentiti: arrivo delle notiiche, camera e localizzazione-->
+          <ion-button :disabled="!permissionsGranted || (selectedClient ? selectedClient.value === null : true)" @click="proceedToNextRoute">
             PROCEDI
             <ion-icon :icon="arrowRedoCircleSharp"></ion-icon>
           </ion-button>
-        </router-link>
       </div>
     </ion-content>
     <div class="toast-background" v-if="showToastBackground"></div>
@@ -35,70 +34,192 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { Camera, CameraResultType } from '@capacitor/camera';
 import { Geolocation } from '@capacitor/geolocation';
 import { Capacitor } from '@capacitor/core';
+import { useRouter } from 'vue-router';
+import { saveClientsToDB, getClientsFromDB } from '@/services/db_clients.js';
+import { saveCitiesToDB, getCitiesFromDB } from '@/services/db_cities.js';
+import { saveStreetsToDB, getStreetsFromDB } from '@/services/db_streets.js';
+import { saveTagsToDB, getTagsFromDB } from '@/services/db_tags.js';
+
+const { networkStatus, logCurrentNetworkStatus, showToastBackground } = useNetwork();
+const store = useStore();
+const router = useRouter();
+const clients = ref([]);
+const cities = ref([]);
+const streets = ref([]);
+const tags = ref([]);
+const selectedClient = ref(null);
+const permissionsGranted = ref(false);
+
+const proceedToNextRoute = () => {
+    if (permissionsGranted.value) {
+        router.push('/sceltaLuogo');
+    }
+};
+
+const requestNotificationsPermissions = async (): Promise<boolean> => {
+  try {
+    const notificationsPermission = await LocalNotifications.checkPermissions();
+    if (notificationsPermission.display !== "granted") {
+      const response = await LocalNotifications.requestPermissions();
+      if (response.display !== "granted") {
+        console.warn('Permessi per le notifiche non concessi.');
+        return false;
+      }
+    }
+    return true;
+  } catch (error) {
+    console.error('Errore durante la gestione delle notifiche:', error);
+    return false;
+  }
+};
 
 const requestCameraPermissions = async () => {
   try {
     const cameraPermission = await Camera.checkPermissions();
     if (cameraPermission.camera !== 'granted') {
       const { camera } = await Camera.requestPermissions();
-      if (camera !== 'granted') {
-        console.warn('Permessi per la fotocamera non concessi.');
-        return;
+      if (camera !== "granted") {
+        console.warn('Permessi per le notifiche non concessi.');
+        return false;
       }
     }
+    return true;
   } catch (error) {
     console.error('Errore durante la gestione della fotocamera:', error);
+    return false;
   }
 };
 
 const requestLocationPermissions = async () => {
-  const locationPermission = await Geolocation.checkPermissions();
+  try {
+    const locationPermission = await Geolocation.checkPermissions();
     if (locationPermission.location !== 'granted') {
       const { location } = await Geolocation.requestPermissions();
-      if (location !== 'granted') {
-        console.warn('Permessi per la posizione non concessi.');
-        return;
+      if (location !== "granted") {
+        console.warn('Permessi per le notifiche non concessi.');
+        return false;
       }
     }
+    return true;
+  } catch (error) {
+    console.error('Errore durante la gestione della posizione:', error);
+    return false;
+  }
 }
-
-const store = useStore();
-
-const { networkStatus, logCurrentNetworkStatus, showToastBackground } = useNetwork();
-
 
 const getNetworkStatus = async () => {
   await logCurrentNetworkStatus();
 };
 
-const clients = ref([]);
-const selectedClient = ref(null);
-
 watch(selectedClient, (newValue) => {
   console.log('Cliente selezionato:', newValue);
 });
 
-onMounted(async () => {
+const fetchClients = async () => {
   try {
-    await LocalNotifications.requestPermissions();
-    await requestCameraPermissions();
-    await requestLocationPermissions();
-    await logCurrentNetworkStatus();
-    
-
     const apiToken = store.getters.getApiToken;
-    //const apiToken = localStorage.getItem('apiToken');
-    console.log(apiToken);
     const response = await axios.get('https://rainwaterdrains.inyourlife.com/api/users/Cliente', {
       headers: {
         'Authorization': `Bearer ${apiToken}`
       }
     });
     clients.value = response.data.data;
+    await saveClientsToDB(clients.value);
     console.log('Clienti:', clients.value);
   } catch (error) {
-    console.error('Errore durante la chiamata API:', error);
+    console.error('Errore durante il recupero dei clienti:', error);
+    clients.value = await getClientsFromDB();
   }
+};
+
+const fetchCities = async () => {
+  try {
+    const apiToken = store.getters.getApiToken;
+    const response = await axios.get('https://rainwaterdrains.inyourlife.com/api/cities', {
+      headers: {
+        'Authorization': `Bearer ${apiToken}`
+      }
+    });
+    cities.value = response.data.data;
+    await saveCitiesToDB(cities.value);
+    console.log('Cities:', cities.value);
+  } catch (error) {
+    console.error('Errore durante il recupero delle città:', error);
+  }
+};
+
+const fetchStreets = async () => {
+  try {
+    const apiToken = store.getters.getApiToken;
+    const response = await axios.get('https://rainwaterdrains.inyourlife.com/api/allStreets', {
+      headers: {
+        'Authorization': `Bearer ${apiToken}`
+      }
+    });
+    streets.value = response.data.data;
+    await saveStreetsToDB(streets.value);
+    console.log('Streets:', streets.value);
+  } catch (error) {
+    console.error('Errore durante il recupero delle strade:', error);
+  }
+};
+
+const fetchTags = async () => {
+  try {
+    const apiToken = store.getters.getApiToken;
+    const response = await axios.get('https://rainwaterdrains.inyourlife.com/api/tags/item', {
+      headers: {
+        'Authorization': `Bearer ${apiToken}`
+      }
+    });
+    tags.value = response.data.data;
+    await saveTagsToDB(tags.value);
+    console.log('Tags:', tags.value);
+  } catch (error) {
+    console.error('Errore durante il recupero dei tag:', error);
+  }
+};
+
+onMounted(async () => {
+  console.log('CLIENTE SELEZIONATO', selectedClient.value === null);
+  const notificationsPermission = await requestNotificationsPermissions();
+  const cameraPermission = await requestCameraPermissions();
+  const locationPermission = await requestLocationPermissions();
+  // Se tutti i permessi sono stati concessi, imposto permissionsGranted su true
+  if (notificationsPermission && cameraPermission && locationPermission) {
+    permissionsGranted.value = true;
+    console.log('PERMESSO', permissionsGranted);
+  }
+  await logCurrentNetworkStatus();
+
+  sessionStorage.clear();
+
+  await Promise.all([
+    fetchClients(),
+    fetchCities(),
+    fetchStreets(),
+    fetchTags()
+  ]);
+});
+
+
+
+document.addEventListener('ionFocus', (event) => {
+    // Usiamo un'asserzione di tipo qui
+    const target = event.target as HTMLElement;
+
+    // Assicuriamoci che l'evento provenga da un ion-select
+    if (target && target.tagName.toLowerCase() === 'ion-select') {
+        // Tentativo di accedere al shadow DOM
+        const shadowRoot = (target as any).shadowRoot;
+        if (shadowRoot) {
+            // Trova l'etichetta all'interno del shadow DOM e modifica lo stile
+            const label = shadowRoot.querySelector('label');
+            if (label) {
+                label.style.backgroundColor = 'red'; // O qualsiasi altro colore desiderato
+            }
+        }
+    }
 });
 
 </script>
@@ -138,7 +259,6 @@ ion-label {
 
 ion-select {
   margin-top: 20px;
-  background-color: rgb(255, 255, 254);
   color: black;
 }
 

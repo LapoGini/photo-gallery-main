@@ -92,7 +92,7 @@ export const usePhotoGallery = () => {
     };
 
     const accuracy = ref<string | number>('N/A');
-    const lowestAccuracy = ref<number | null>(null);
+    //const lowestAccuracy = ref<number | null>(null);
 
     const getRealTimeAccuracy = async () => {
       try {
@@ -103,10 +103,10 @@ export const usePhotoGallery = () => {
           accuracy.value = currentAccuracy;
           console.log('accuracy', accuracy.value);
           
-          if (lowestAccuracy.value === null || currentAccuracy < lowestAccuracy.value) {
+          /*if (lowestAccuracy.value === null || currentAccuracy < lowestAccuracy.value) {
             lowestAccuracy.value = currentAccuracy;
             console.log('lowest accuracy', lowestAccuracy.value);
-          }
+          }*/
         } else {
           accuracy.value = 'N/A';
         }
@@ -137,7 +137,7 @@ export const usePhotoGallery = () => {
 
 
         //crea un nome univoco per il file della foto
-        const imageTitle = Date.now() + '- title';
+        const imageTitle = Date.now() + '-title';
         const savedFileImage = await savePicture(photo, imageTitle, coordinates);
 
         stopMonitoringAccuracy();
@@ -148,6 +148,8 @@ export const usePhotoGallery = () => {
 
         //aggiunge l'oggetto savedFileImage all'array photos
         photos.value = [savedFileImage, ...photos.value];
+
+        return savedFileImage;
     };
 
     const savePicture = async (photo: Photo, title: string, coordinates: any): Promise<UserPhoto> => {
@@ -220,12 +222,20 @@ export const usePhotoGallery = () => {
         photos,
         takePhoto,
         accuracy,
-        lowestAccuracy,
+        //lowestAccuracy,
     };
 };
 
+interface Coordinates {
+  coords: {
+      latitude: number;
+      longitude: number;
+      altitude: number | null;
+      accuracy: number;
+  };
+}
 
-// definita l'interfaccia UserPhoto che rappresenta una singola foto con i suoi metadati
+
 export interface UserPhoto {
     //id generato da IndexedDB
     id?: number;
@@ -237,4 +247,6 @@ export interface UserPhoto {
     webviewPath?: string;
     // titolo foto
     title?: string;
+    // Coordinate
+    coordinates?: Coordinates;
 }

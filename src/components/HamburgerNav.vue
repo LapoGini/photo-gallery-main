@@ -64,6 +64,8 @@
   import { defineComponent, PropType } from 'vue';
   import axios from 'axios';
   import { useStore } from 'vuex';
+  import { useRouter } from 'vue-router';
+  import { mapActions } from 'vuex';
 
 
   export default defineComponent({
@@ -89,21 +91,18 @@
     },
     setup(props) {
       const store = useStore();
-
       const handleLogoutClick = async (navigate: () => void) => {
         try {
           const apiToken = store.getters.getApiToken;
-          console.log('lo fa:', apiToken);
-
+          localStorage.clear();
           props.updateAuthentication(false);
-
+          navigate();
+          console.log('lo fa nel logout:', apiToken);
           await axios.post('https://rainwaterdrains.inyourlife.com/api/logout', {
             headers: {
               'Authorization': `Bearer ${apiToken}`
             }
           });
-
-          navigate();
         } catch (error) {
           console.error('Errore durante il logout', error);
         }

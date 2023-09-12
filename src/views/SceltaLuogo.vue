@@ -12,10 +12,6 @@
           </ion-select-option>
         </ion-select>
         <div v-if="selectedCity">
-            
-          
-            <Example />
-
           
           <div v-if="streets.length > 0">
             <ion-label class="choose-client"> Scegli la via:</ion-label>
@@ -27,16 +23,14 @@
           </div>
 
           
-            <ion-label> Aggiungi via:</ion-label>
-            <ion-input v-model="newStreetName" label="Aggiungi una nuova via..." label-placement="floating" fill="solid"></ion-input>
+          <ion-label> Aggiungi via:</ion-label>
+          <ion-input v-model="newStreetName" label="Aggiungi una nuova via..." label-placement="floating" fill="solid"></ion-input>
           <div v-if="newStreetName !== '' && newStreetName !== undefined && newStreetName !== null">
-            <router-link to="/ilTuoLuogo">
               <ion-button @click="addStreet">Aggiungi Via</ion-button>
-            </router-link>
           </div>
           
           <div v-else-if="selectedStreet">
-            <router-link to="/ilTuoLuogo">
+            <router-link :to="{ name: 'IlTuoLuogo', params: { selectedCityName: selectedCity, selectedStreetName: selectedStreet }}" @click="removeAddStreetFromLocalStorage">
               <ion-button>
                 PROCEDI
               </ion-button>
@@ -59,9 +53,11 @@ import { ref, defineComponent, onMounted, watch, onBeforeUnmount } from 'vue';
 import axios from 'axios';
 import { useStore } from 'vuex';
 import { useNetwork } from '@/composables/useNetwork';
+import { useRouter } from 'vue-router';
+import { saveCitiesToDB, getCitiesFromDB } from '@/services/db_cities.js';
+import { saveStreetsToDB, saveStreetToDB, getStreetsFromDB } from '@/services/db_streets.js';
 
 const { networkStatus, logCurrentNetworkStatus, showToastBackground } = useNetwork();
-
 
 export default defineComponent({
   name: 'SceltaLuogo',
@@ -74,6 +70,7 @@ export default defineComponent({
     const addStreetResult = ref(null);
     const cities = ref([]);
     const store = useStore();
+    const router = useRouter();
 
     const fetchCities = async () => {
       try {
@@ -85,8 +82,10 @@ export default defineComponent({
           }
         });
         cities.value = response.data.data;
+        await saveCitiesToDB(cities.value);
       } catch (error) {
         console.error('Errore durante il recupero delle città:', error);
+        cities.value = await getCitiesFromDB();
       }
     };
 
@@ -94,13 +93,14 @@ export default defineComponent({
       console.log('Comune selezionato:', newValue);
 
       if (newValue !== oldValue) {
+        saveCityToLocalStorage();
         handleSelectChange();
       }
     });
 
     watch(selectedStreet, (newValue, oldValue) => {
       console.log('Via selezionata:', newValue);
-      saveDataToLocalStorage();
+      saveStreetToLocalStorage();
     });
 
     watch(newStreetName, (newValue, oldValue) => {
@@ -126,23 +126,32 @@ export default defineComponent({
       window.removeEventListener('unload', cleanLocalStorageBeforeUnload);
     });
 
+    const saveCityToLocalStorage = () => {
+      localStorage.setItem('city', JSON.stringify(selectedCity.value));
+    };
 
-    const saveDataToLocalStorage = () => {
-      const savedData = {
-        selectedCity: selectedCity.value,
-        selectedStreet: selectedStreet.value,
-        newStreetName: newStreetName.value,
-      };
-      localStorage.setItem('savedData', JSON.stringify(savedData));
+    const saveStreetToLocalStorage = () => {
+      localStorage.setItem('street', JSON.stringify(selectedStreet.value));
+    };
+
+    const removeStreetFromLocalStorage = () => {
+      localStorage.removeItem('street');
+    };
+
+    const removeAddStreetFromLocalStorage = () => {
+      localStorage.removeItem('addStreet');
     };
 
     const restoreDataFromLocalStorage = () => {
-      const savedData = localStorage.getItem('savedData');
-      if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        selectedCity.value = parsedData.selectedCity;
-        selectedStreet.value = parsedData.selectedStreet;
-        newStreetName.value = parsedData.newStreetName;
+      const savedCity = localStorage.getItem('city');
+      const savedStreet = localStorage.getItem('street');
+
+      if (savedCity) {
+        selectedCity.value = JSON.parse(savedCity);
+      }
+
+      if (savedStreet) {
+        selectedStreet.value = JSON.parse(savedStreet);
       }
     };
 
@@ -158,11 +167,11 @@ export default defineComponent({
           }
         });
         streets.value = response.data.data;
+        await saveStreetsToDB(streets.value);
         console.log('Vie:', streets.value);
-
-        saveDataToLocalStorage();
       } catch (error) {
-        console.error('Errore durante la chiamata API:', error);
+        console.error('Errore durante la chiamata API per le vie:', error);
+        streets.value = await getStreetsFromDB(selectedCity.value);
       }
     };
 
@@ -176,18 +185,41 @@ export default defineComponent({
           headers: {
             'Authorization': `Bearer ${apiToken}`
           },
-          nuova_strada: newStreetName.value,
-          comune_id: selectedCity.value,
+          id: null,
+          name: newStreetName.value,
+          city_id: selectedCity.value,
         });
+        console.log('response data della via aggiunta da onine:', response.data);
         addStreetResult.value = response.data;
+        if(addStreetResult.value.idNew){
+            localStorage.setItem('addStreet', JSON.stringify(addStreetResult.value.idNew));
+            removeStreetFromLocalStorage();
+            router.push({ name: 'IlTuoLuogo', params: { selectedCityName: selectedCity.value, selectedStreetName: addStreetResult.value.idNew }});
+        }
+        console.log('RISPOSTA DELLA STRADA AGGIUNTA', addStreetResult.value.idNew);
         // Aggiornare la lista delle vie dopo aver aggiunto una nuova via
         handleSelectChange();
       } catch (error) {
         console.error('Errore durante la chiamata API:', error);
+        const generatedId = await saveStreetToDB({
+            name: newStreetName.value,
+            city_id: selectedCity.value
+        });
+
+        localStorage.setItem('addStreet', JSON.stringify(generatedId));
+        removeStreetFromLocalStorage();
+
+        router.push({
+            name: 'IlTuoLuogo',
+            params: {
+                selectedCityName: selectedCity.value,
+                selectedStreetName: generatedId
+            }
+        });
       }
     };
 
-    return { selectedCity, selectedStreet, streets, newStreetName, addStreetResult, cities, handleSelectChange, addStreet };
+    return { selectedCity, selectedStreet, streets, newStreetName, addStreetResult, cities, handleSelectChange, addStreet, removeAddStreetFromLocalStorage };
   },
 });
 </script>

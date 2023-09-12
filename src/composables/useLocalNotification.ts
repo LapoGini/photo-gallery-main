@@ -14,15 +14,15 @@ const checkPermissions = async (): Promise<PermissionStatus> => {
 
 // Funzione per richiedere i permessi delle notifiche
 const requestPermissions = async (): Promise<PermissionStatus> => {
-    try {
-      const permissions = await LocalNotifications.requestPermissions();
-      console.log('Requested Permissions:', permissions);
-      return permissions;
-    } catch (error) {
-      console.error('Error requesting permissions:', error);
-      return null;
-    }
-  };
+  try {
+    const permissions = await LocalNotifications.requestPermissions();
+    console.log('Requested Permissions:', permissions);
+    return permissions;
+  } catch (error) {
+    console.error('Error requesting permissions:', error);
+    return null;
+  }
+};
 
 // Funzione per pianificare una notifica locale
 const scheduleLocalNotification = async () => {
