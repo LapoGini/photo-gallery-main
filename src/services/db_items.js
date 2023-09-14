@@ -38,3 +38,8 @@ export async function getAllItemsFromDB() {
     const store = tx.objectStore(STORE_NAME_ITEMS);
     return store.openCursor();
 }
+
+export async function countItemsInDB() {
+    const db = await initItemsDB();
+    return db.count(STORE_NAME_ITEMS);
+}

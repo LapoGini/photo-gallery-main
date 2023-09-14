@@ -61,8 +61,8 @@ const props = defineProps({
   selectedCityName: String,
   selectedStreetName: String
 });
-console.log('Nome Comune:', props.selectedCityName);
-console.log('Nome Strada:', props.selectedStreetName);
+console.log('Nome Comune:', localStorage.getItem('city'));
+console.log('Nome Strada:', localStorage.getItem('street') || localStorage.getItem('addStreet'));
 
 const getNetworkStatus = async () => {
   await logCurrentNetworkStatus();
@@ -92,6 +92,7 @@ const cityDistrict = ref('');
 const streetName = ref('');
 
 const fetchCity = async () => {
+  const storedCityId = localStorage.getItem('city');
   try {
     const apiToken = store.getters.getApiToken;
     console.log(apiToken);
@@ -104,7 +105,7 @@ const fetchCity = async () => {
     
     console.log('LE CITTA CHE MI PIGLIO IN IL TUO LUOGO', cities.value);
 
-    const selectedCity = cities.value.find(({comune_id}) => comune_id == props.selectedCityName);
+    const selectedCity = cities.value.find(({comune_id}) => comune_id == storedCityId);
 
     console.log('CITTA SELEZIONATA = ', selectedCity);
 
@@ -122,7 +123,7 @@ const fetchCity = async () => {
 
     cities.value = await getCitiesFromDB();
 
-    const selectedCity = cities.value.find(({comune_id}) => comune_id == props.selectedCityName);
+    const selectedCity = cities.value.find(({comune_id}) => comune_id == storedCityId);
     if (selectedCity) {
       cityName.value = selectedCity.comune_nome;
       cityDistrict.value = selectedCity.provincia_id;
@@ -132,6 +133,7 @@ const fetchCity = async () => {
 };
 
 const fetchStreet = async () => {
+  const storedStreetId = localStorage.getItem('street') || localStorage.getItem('addStreet');
   try {
     const apiToken = store.getters.getApiToken;
     console.log(apiToken);
@@ -144,7 +146,7 @@ const fetchStreet = async () => {
 
       console.log('LE VIE CHE MI PIGLIO', streets);
 
-      const selectedStreet = streets.find(({ id }) => id == props.selectedStreetName);
+      const selectedStreet = streets.find(({ id }) => id == storedStreetId);
 
       console.log('VIA SELEZIONATA = ', selectedStreet);
 
@@ -155,7 +157,7 @@ const fetchStreet = async () => {
       } else {
         // Se non è stata trovata una strada dalla richiesta iniziale, cerca in IndexedDB
         streets.value = await getAllStreetsFromDB();
-        const dbSelectedStreet = streets.value.find(({ id }) => id == props.selectedStreetName);
+        const dbSelectedStreet = streets.value.find(({ id }) => id == storedStreetId);
         
         if (dbSelectedStreet) {
           streetName.value = dbSelectedStreet.name;
@@ -169,7 +171,7 @@ const fetchStreet = async () => {
       console.error('Errore durante il recupero delle vie:', error);
       
       streets.value = await getAllStreetsFromDB();
-      const selectedStreet = streets.value.find(({ id }) => id == props.selectedStreetName);
+      const selectedStreet = streets.value.find(({ id }) => id == storedStreetId);
       if(selectedStreet) {
         streetName.value = selectedStreet.name;
       }

@@ -24,7 +24,7 @@ const routes: Array<RouteRecordRaw> = [
     name: 'SceltaLuogo',
   },
   {
-    path: '/ilTuoLuogo/:selectedCityName/:selectedStreetName',
+    path: '/ilTuoLuogo',
     component: IlTuoLuogo,
     name: 'IlTuoLuogo',
     props: true,

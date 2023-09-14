@@ -94,7 +94,7 @@ export const usePhotoGallery = () => {
     const accuracy = ref<string | number>('N/A');
     //const lowestAccuracy = ref<number | null>(null);
 
-    const getRealTimeAccuracy = async () => {
+    /*const getRealTimeAccuracy = async () => {
       try {
         const coordinates = await getCurrentPosition();
         const currentAccuracy = coordinates?.coords?.accuracy;
@@ -103,10 +103,10 @@ export const usePhotoGallery = () => {
           accuracy.value = currentAccuracy;
           console.log('accuracy', accuracy.value);
           
-          /*if (lowestAccuracy.value === null || currentAccuracy < lowestAccuracy.value) {
+          if (lowestAccuracy.value === null || currentAccuracy < lowestAccuracy.value) {
             lowestAccuracy.value = currentAccuracy;
             console.log('lowest accuracy', lowestAccuracy.value);
-          }*/
+          }
         } else {
           accuracy.value = 'N/A';
         }
@@ -114,16 +114,17 @@ export const usePhotoGallery = () => {
         console.error('Errore:', error);
         accuracy.value = 'N/A';
       }
-    }
-
+    }*/
+    /*
     const startAccuracyMonitoring = () => {
       const intervalId = setInterval(getRealTimeAccuracy, 1500);
       const stopMonitoring = () => clearInterval(intervalId);
       return stopMonitoring;
     }
+    */
 
     const takePhoto = async () => {
-      const stopMonitoringAccuracy = startAccuracyMonitoring();
+        //const stopMonitoringAccuracy = startAccuracyMonitoring();
         const photo = await Camera.getPhoto({
             resultType: CameraResultType.Uri,
             source: CameraSource.Camera,
@@ -140,7 +141,7 @@ export const usePhotoGallery = () => {
         const imageTitle = Date.now() + '-title';
         const savedFileImage = await savePicture(photo, imageTitle, coordinates);
 
-        stopMonitoringAccuracy();
+        //stopMonitoringAccuracy();
 
         await checkPermissions();
         await requestPermissions();
@@ -172,6 +173,8 @@ export const usePhotoGallery = () => {
 
         // Chiudere la transazione
         await tx.done;
+
+        
 
         return { id, filepath: photo.webPath, title, coordinates };
     };

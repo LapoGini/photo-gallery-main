@@ -197,9 +197,13 @@
   const long = localStorage.getItem('photoLongitude');
   const id_da_app = `${formattedDate}-${user_id}-${lat}-${long}`;
 
+  const tagsFromLocalStorage = JSON.parse(localStorage.getItem('selectedTags') || '{}');
+  console.log("Tags from localStorage:", tagsFromLocalStorage);
+
+
   const clearLocalStorageExceptUser = () => {
       for (let key in localStorage) {
-          if (key !== 'user' && key !== 'apiToken') {
+          if (key !== 'user' && key !== 'apiToken' && key !== 'city' && key !== 'street' && key !== 'addStreet') {
               localStorage.removeItem(key);
           }
       }
@@ -208,7 +212,6 @@
   const connection = computed(() => {
       return savedLocally.value ? "Non sei connesso" : "Sei connesso";
   });
-
 
   const saveItem = async () => {
       const itemData = {
@@ -226,20 +229,25 @@
           civic: localStorage.getItem('address'),
           note: localStorage.getItem('notes'),
           id_da_app: id_da_app,
+          tags: localStorage.getItem('selectedTags') ? localStorage.getItem('selectedTags') : null,
       };
       try {
+        console.log('ITEM DATA', itemData);
           const apiToken = store.getters.getApiToken;
           const response = await axios.post('https://rainwaterdrains.inyourlife.com/api/item', itemData, {
               headers: {
                   'Authorization': `Bearer ${apiToken}`
               }
           });
-          console.log('Item saved:', response.data);
-          isOpen.value = true;
-          savedLocally.value = false;
-          clearLocalStorageExceptUser();
-          await new Promise(resolve => setTimeout(resolve, 3000));
-          router.push('/ilTuoLuogo');
+          console.log('RISPOSTA DELLA CHIAMATA API PER SALVARE L\'ITEM', response.data);
+          if (response.data) {
+              console.log('Item saved:', response.data);
+              isOpen.value = true;
+              savedLocally.value = false;
+              clearLocalStorageExceptUser();
+              await new Promise(resolve => setTimeout(resolve, 3000));
+              router.push('/ilTuoLuogo');
+          }
       } catch (error) {
           console.error('Error saving item:', error);
           await saveItemToDB(itemData);

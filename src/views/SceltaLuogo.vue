@@ -30,7 +30,7 @@
           </div>
           
           <div v-else-if="selectedStreet">
-            <router-link :to="{ name: 'IlTuoLuogo', params: { selectedCityName: selectedCity, selectedStreetName: selectedStreet }}" @click="removeAddStreetFromLocalStorage">
+            <router-link :to="{ name: 'IlTuoLuogo'}" @click="removeAddStreetFromLocalStorage">
               <ion-button>
                 PROCEDI
               </ion-button>
@@ -194,7 +194,7 @@ export default defineComponent({
         if(addStreetResult.value.idNew){
             localStorage.setItem('addStreet', JSON.stringify(addStreetResult.value.idNew));
             removeStreetFromLocalStorage();
-            router.push({ name: 'IlTuoLuogo', params: { selectedCityName: selectedCity.value, selectedStreetName: addStreetResult.value.idNew }});
+            router.push({ name: 'IlTuoLuogo' });
         }
         console.log('RISPOSTA DELLA STRADA AGGIUNTA', addStreetResult.value.idNew);
         // Aggiornare la lista delle vie dopo aver aggiunto una nuova via
@@ -209,13 +209,7 @@ export default defineComponent({
         localStorage.setItem('addStreet', JSON.stringify(generatedId));
         removeStreetFromLocalStorage();
 
-        router.push({
-            name: 'IlTuoLuogo',
-            params: {
-                selectedCityName: selectedCity.value,
-                selectedStreetName: generatedId
-            }
-        });
+        router.push({ name: 'IlTuoLuogo' });
       }
     };
 
