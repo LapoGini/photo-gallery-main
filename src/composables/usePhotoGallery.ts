@@ -4,19 +4,91 @@ import { Preferences } from '@capacitor/preferences';
 import { openDB } from 'idb';
 import { Geolocation } from '@capacitor/geolocation';
 import { LocalNotifications, ScheduleOptions, ScheduleResult, PermissionStatus } from '@capacitor/local-notifications';
+import axios from 'axios';
+
+export const uploadPhotoToServer = async (imageBlob: Blob) => {
+  try {
+    const apiToken = localStorage.getItem('apiToken');
+    console.log('APITOKEN PER LA FOTO:', apiToken);
+    console.log(typeof imageBlob, imageBlob);
+    const base64ImageString = await imageBlob;
+    console.log('IMMAGINE CONVERTITA IN BASE64:', base64ImageString);
+
+    const pic = localStorage.getItem('photoTitle') + '.jpg'; 
+
+    const data = {
+      imagedata: base64ImageString,
+      imageName: pic,
+      cartellaDelGiorno: new Date().toISOString().split('T')[0]
+    };
+    console.log('DATA CHE PASSO ALL\'IMMAGINE:', data);
+
+    const response = await axios.post('https://rainwaterdrains.inyourlife.com/api/saveImage', data, {
+      headers: {
+        'Authorization': `Bearer ${apiToken}`
+      }
+    });
+    console.log('Risposta base64:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Errore durante l’upload della foto:', error);
+    throw error;
+  }
+};
 
 
-const convertBlobToBase64 = (blob: Blob) =>
-  new Promise((resolve, reject) => {
+function blobToBase64(blob: Blob) {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = reject;
-    reader.onload = () => {
+    reader.onloadend = function() {
       resolve(reader.result);
     };
+    reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
+}
 
 export const usePhotoGallery = () => {
+
+  // REDIMENSIONAMENTO IMMAGINE DA MB A KB
+  const resizeImage = async (blob: Blob, maxWidth: number = 1024, maxHeight: number = 768): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = URL.createObjectURL(blob);
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            if (ctx === null) {
+                reject(new Error('Failed to create canvas context'));
+                return;
+            }
+            
+            const aspectRatio = img.width / img.height;
+            if (img.width > img.height) {
+                canvas.width = maxWidth;
+                canvas.height = maxWidth / aspectRatio;
+            } else {
+                canvas.height = maxHeight;
+                canvas.width = maxHeight * aspectRatio;
+            }
+ 
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+ 
+            canvas.toBlob((resizedBlob: Blob | null) => {
+                if (resizedBlob) {
+                    resolve(resizedBlob);
+                } else {
+                    reject(new Error('Failed to resize image'));
+                }
+            }, 'image/jpeg', 0.8);
+        };
+        img.onerror = () => {
+            reject(new Error('Failed to load image'));
+        };
+    });
+ }
+ 
 
   // Funzione per controllare i permessi delle notifiche
   const checkPermissions = async (): Promise<PermissionStatus> => {
@@ -92,43 +164,13 @@ export const usePhotoGallery = () => {
     };
 
     const accuracy = ref<string | number>('N/A');
-    //const lowestAccuracy = ref<number | null>(null);
-
-    /*const getRealTimeAccuracy = async () => {
-      try {
-        const coordinates = await getCurrentPosition();
-        const currentAccuracy = coordinates?.coords?.accuracy;
-        
-        if (currentAccuracy !== null) {
-          accuracy.value = currentAccuracy;
-          console.log('accuracy', accuracy.value);
-          
-          if (lowestAccuracy.value === null || currentAccuracy < lowestAccuracy.value) {
-            lowestAccuracy.value = currentAccuracy;
-            console.log('lowest accuracy', lowestAccuracy.value);
-          }
-        } else {
-          accuracy.value = 'N/A';
-        }
-      } catch (error) {
-        console.error('Errore:', error);
-        accuracy.value = 'N/A';
-      }
-    }*/
-    /*
-    const startAccuracyMonitoring = () => {
-      const intervalId = setInterval(getRealTimeAccuracy, 1500);
-      const stopMonitoring = () => clearInterval(intervalId);
-      return stopMonitoring;
-    }
-    */
 
     const takePhoto = async () => {
         //const stopMonitoringAccuracy = startAccuracyMonitoring();
         const photo = await Camera.getPhoto({
             resultType: CameraResultType.Uri,
             source: CameraSource.Camera,
-            quality: 100,
+            quality: 30,
         });
 
         // Prendere le cordinate dalla funzione getCurrrentPosition()
@@ -136,9 +178,8 @@ export const usePhotoGallery = () => {
 
         const accuracy = coordinates?.coords?.accuracy || 'N/A';
 
-
         //crea un nome univoco per il file della foto
-        const imageTitle = Date.now() + '-title';
+        const imageTitle = `img_${new Date().toISOString().replace(/:/g, "_")}`;
         const savedFileImage = await savePicture(photo, imageTitle, coordinates);
 
         //stopMonitoringAccuracy();
@@ -157,7 +198,13 @@ export const usePhotoGallery = () => {
         // Fetch the photo, read as a blob, then convert to base64 format
         const response = await fetch(photo.webPath!);
         const blob = await response.blob();
-        const base64Data = (await convertBlobToBase64(blob)) as string;
+        // Resize the image blob
+        const resizedBlob = await resizeImage(blob);
+
+        // Convert the resized blob to base64
+        const base64Data = (await blobToBase64(resizedBlob)) as string;
+
+        localStorage.setItem('base64Data', base64Data);
         
         // Aprire il database
         const db = await photoGalleryDBPromise;
@@ -173,8 +220,6 @@ export const usePhotoGallery = () => {
 
         // Chiudere la transazione
         await tx.done;
-
-        
 
         return { id, filepath: photo.webPath, title, coordinates };
     };

@@ -42,7 +42,7 @@ import { IonPage, IonContent, IonIcon, IonButton, IonSelect, IonSelectOption, Io
 import { arrowRedoCircleSharp, arrowUndoOutline } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
 import { camera } from 'ionicons/icons';
-import { usePhotoGallery, UserPhoto } from '@/composables/usePhotoGallery';
+import { usePhotoGallery, UserPhoto, uploadPhotoToServer } from '@/composables/usePhotoGallery';
 import { useStore } from 'vuex';
 import { useNetwork } from '@/composables/useNetwork';
 import { ref, onMounted, watch } from 'vue';
@@ -51,8 +51,6 @@ import { getCitiesFromDB } from '@/services/db_cities.js';
 import { getAllStreetsFromDB, getUnsynchronizedStreetsFromDB, saveStreetsToDB } from '@/services/db_streets.js';
 import { getItemsFromDB, deleteItemFromDB } from '@/services/db_items.js';
 import { deleteDB } from 'idb';
-
-
 
 const { networkStatus, logCurrentNetworkStatus, showToastBackground } = useNetwork();
 const router = useRouter();
@@ -78,9 +76,11 @@ const handlePhoto = async () => {
        localStorage.setItem('photoLongitude', photo.coordinates?.coords?.longitude?.toString() || 'N/A');
        localStorage.setItem('photoAccuracy', photo.coordinates?.coords?.accuracy?.toString() || 'N/A');
        localStorage.setItem('photoPath', photo.filepath.toString() || 'N/A');
-       
-       // Navigare alla rotta successiva dopo aver confermato la foto
-       router.push('/fotoMap');
+
+      const base64Data = localStorage.getItem('base64Data');
+      await uploadPhotoToServer(base64Data);
+      // Navigare alla rotta successiva dopo aver confermato la foto
+      router.push('/fotoMap');
    }
 };
 

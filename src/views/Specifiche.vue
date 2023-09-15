@@ -221,7 +221,7 @@
           altitude: localStorage.getItem('photoAltitude'),
           accuracy: localStorage.getItem('photoAccuracy'),
           time_stamp_pulizia: formattedDate,
-          pic: localStorage.getItem('photoTitle'),
+          pic: localStorage.getItem('photoTitle') + '.jpg',
           street_id: streetValue ? streetValue : addStreetValue,
           height: localStorage.getItem('height'),
           width: localStorage.getItem('width'),

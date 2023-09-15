@@ -28,8 +28,28 @@
           <div v-if="newStreetName !== '' && newStreetName !== undefined && newStreetName !== null">
               <ion-button @click="addStreet">Aggiungi Via</ion-button>
           </div>
+
+          <div class="caditoie-box" v-if="caditoieResults.length > 0">
+            <div class="caditoia-header" @click="isExpanded = !isExpanded">
+              Caditoie scansionate: {{ caditoieResults.length }}
+              <div class="icon-expanded">{{ isExpanded ? '▽' : '△' }}</div>
+            </div>
+            <div class="caditoia-list" v-if="isExpanded">
+              <div class="caditoia-item" v-for="caditoia in caditoieResults" :key="caditoia.id">
+                <p>
+                  Data scansione: {{ caditoia.data_caditoia }}
+                </p>
+                <p v-if="caditoia.caditoie_civico !== null">
+                  Civico: {{ caditoia.caditoie_civico }}
+                </p>
+                <p>
+                  User: {{ caditoia.user }}
+                </p>
+              </div>
+            </div>
+          </div>
           
-          <div v-else-if="selectedStreet">
+          <div v-if="selectedStreet">
             <router-link :to="{ name: 'IlTuoLuogo'}" @click="removeAddStreetFromLocalStorage">
               <ion-button>
                 PROCEDI
@@ -68,6 +88,8 @@ export default defineComponent({
     const streets = ref([]);
     const newStreetName = ref('');
     const addStreetResult = ref(null);
+    const caditoieResults = ref([]);
+    const isExpanded = ref(false);
     const cities = ref([]);
     const store = useStore();
     const router = useRouter();
@@ -101,6 +123,7 @@ export default defineComponent({
     watch(selectedStreet, (newValue, oldValue) => {
       console.log('Via selezionata:', newValue);
       saveStreetToLocalStorage();
+      fetchCaditoieScansionatePerVia();
     });
 
     watch(newStreetName, (newValue, oldValue) => {
@@ -213,7 +236,35 @@ export default defineComponent({
       }
     };
 
-    return { selectedCity, selectedStreet, streets, newStreetName, addStreetResult, cities, handleSelectChange, addStreet, removeAddStreetFromLocalStorage };
+    const fetchCaditoieScansionatePerVia = async () => {
+      try {
+        const apiToken = store.getters.getApiToken;
+
+        const payload = {
+            data: {
+                giorniindietro: 60,
+                codice_via: localStorage.getItem('street'),
+                user: localStorage.getItem('user'),
+            }
+        };
+
+        const response = await axios.post('https://rainwaterdrains.inyourlife.com/api/scansioniPerVia', payload, {
+          headers: {
+            'Authorization': `Bearer ${apiToken}`
+          }
+        });
+
+        if(response.data) {
+            caditoieResults.value = response.data.caditoie;
+            console.log('Array caditoie:', caditoieResults.value);
+        }
+        
+      } catch (error) {
+        console.error('Errore durante la chiamata a scansioniPerVia:', error);
+      }
+    };
+
+    return { isExpanded, selectedCity, selectedStreet, streets, caditoieResults, newStreetName, addStreetResult, cities, handleSelectChange, addStreet, removeAddStreetFromLocalStorage, fetchCaditoieScansionatePerVia };
   },
 });
 </script>
@@ -285,4 +336,34 @@ ion-button {
   backdrop-filter: blur(10px);
   z-index: 1000;
 }
+
+.caditoie-box {
+  margin-top: 20px;
+  background-color: white;
+  color: black;
+}
+
+.icon-expanded {
+  border: 1px solid white;
+}
+
+.caditoia-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  font-size: 20px;
+  padding: 0 10px;
+}
+
+.caditoia-list {
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.caditoia-item {
+  padding-top: 10px;
+  border: 1px solid black;
+}
+
 </style>
