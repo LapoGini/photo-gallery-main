@@ -59,6 +59,12 @@ const props = defineProps({
   selectedCityName: String,
   selectedStreetName: String
 });
+const { photos, takePhoto, accuracy } = usePhotoGallery();
+const cities = ref([]);
+const streets = ref([]);
+const cityName = ref('');
+const cityDistrict = ref('');
+const streetName = ref('');
 console.log('Nome Comune:', localStorage.getItem('city'));
 console.log('Nome Strada:', localStorage.getItem('street') || localStorage.getItem('addStreet'));
 
@@ -77,19 +83,18 @@ const handlePhoto = async () => {
        localStorage.setItem('photoAccuracy', photo.coordinates?.coords?.accuracy?.toString() || 'N/A');
        localStorage.setItem('photoPath', photo.filepath.toString() || 'N/A');
 
-      const base64Data = localStorage.getItem('base64Data');
-      await uploadPhotoToServer(base64Data);
+/*
+      if(networkStatus.value) {
+        console.log(networkStatus);
+        const base64Data = localStorage.getItem('base64Data');
+        await uploadPhotoToServer(base64Data);
+      }
+*/
+      console.log('va avanti');
       // Navigare alla rotta successiva dopo aver confermato la foto
       router.push('/fotoMap');
    }
 };
-
-const { photos, takePhoto, accuracy } = usePhotoGallery();
-const cities = ref([]);
-const streets = ref([]);
-const cityName = ref('');
-const cityDistrict = ref('');
-const streetName = ref('');
 
 const fetchCity = async () => {
   const storedCityId = localStorage.getItem('city');
