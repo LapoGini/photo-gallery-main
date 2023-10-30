@@ -6,7 +6,7 @@ import { Geolocation } from '@capacitor/geolocation';
 import { LocalNotifications, ScheduleOptions, ScheduleResult, PermissionStatus } from '@capacitor/local-notifications';
 import axios from 'axios';
 
-export const uploadPhotoToServer = async (imageBlob: Blob) => {
+export const uploadPhotoToServer = async (imageBlob: Blob, itemPic?: string) => {
   try {
     const apiToken = localStorage.getItem('apiToken');
     console.log('APITOKEN PER LA FOTO:', apiToken);
@@ -14,7 +14,7 @@ export const uploadPhotoToServer = async (imageBlob: Blob) => {
     const base64ImageString = await imageBlob;
     console.log('IMMAGINE CONVERTITA IN BASE64:', base64ImageString);
 
-    const pic = localStorage.getItem('photoTitle') + '.jpg';
+    const pic = localStorage.getItem('photoTitle') ? localStorage.getItem('photoTitle') + '.jpg' : itemPic;
 
     const data = {
       imagedata: base64ImageString,

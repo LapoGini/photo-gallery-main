@@ -280,12 +280,10 @@ const saveItem = async () => {
   console.log(picTitle);
   const photo = await getPhotoFromDB(picTitle);
   console.log(photo);
-
   if (!photo || !photo.base64Data) {
     console.error("Photo non trovata in indexedDB");
     return;
   }
-
   const base64ImageString = await blobToBase64(photo.base64Data);
   const itemData = {
     user_id: user_id,
