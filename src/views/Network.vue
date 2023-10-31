@@ -7,16 +7,23 @@
     </ion-header>
     <ion-content>
       <h3>PAGINA 2</h3>
-      <p>
-        Sei {{ networkStatus ? 'Online' : 'Offline' }}
-      </p>
+      <p>Sei {{ networkStatus ? "Online" : "Offline" }}</p>
     </ion-content>
+    <div class="toast-background" v-if="showToastBackground"></div>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonMenuButton } from '@ionic/vue';
-import { useNetwork } from '@/composables/useNetwork';
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonButtons,
+  IonMenuButton,
+} from "@ionic/vue";
+import { useNetwork } from "@/composables/useNetwork";
 
 // Usa il composable
 const { networkStatus, logCurrentNetworkStatus } = useNetwork();
@@ -26,11 +33,3 @@ const getNetworkStatus = async () => {
   await logCurrentNetworkStatus();
 };
 </script>
-
-<!-- In caso di connessione debole o assente devo salvare i dati nell'indexedDB 
-
-Quando si ristabiolizza la connessione fare la chiamata API per mandare i dati al server ed
-
-Eliminare i dati dall'indexedDB nel caso in cui siano già stati inviati al server
-
- -->

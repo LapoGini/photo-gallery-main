@@ -8,9 +8,9 @@
     <ion-content class="ion-padding">
       <ion-list lines="full">
         <router-link to="/" v-slot="{ navigate }">
-            <ion-item @click="navigate()">
-              <ion-label class="ion-text-bold">Home</ion-label>
-            </ion-item>
+          <ion-item @click="navigate()">
+            <ion-label class="ion-text-bold">Home</ion-label>
+          </ion-item>
         </router-link>
         <router-link to="/sceltaLuogo" v-slot="{ navigate }">
           <ion-item @click="navigate()">
@@ -18,30 +18,30 @@
           </ion-item>
         </router-link>
         <router-link to="/sincro" v-slot="{ navigate }">
-            <ion-item @click="navigate()">
-              <ion-label class="ion-text-bold">Sincro</ion-label>
-            </ion-item>
+          <ion-item @click="navigate()">
+            <ion-label class="ion-text-bold">Sincro</ion-label>
+          </ion-item>
         </router-link>
         <router-link to="/scansioni" v-slot="{ navigate }">
-            <ion-item @click="navigate()">
-              <ion-label class="ion-text-bold">Scansioni</ion-label>
-            </ion-item>
+          <ion-item @click="navigate()">
+            <ion-label class="ion-text-bold">Scansioni</ion-label>
+          </ion-item>
         </router-link>
-          <router-link to="/network" v-slot="{ navigate }">
-              <ion-item @click="navigate()">
-                <ion-label class="ion-text-bold">Network</ion-label>
-              </ion-item>
-          </router-link>
-          <router-link to="/localNotification" v-slot="{ navigate }">
-              <ion-item @click="navigate()">
-                <ion-label class="ion-text-bold">Local Notification</ion-label>
-              </ion-item>
-          </router-link>
-          <router-link to="/" v-slot="{ navigate }">
-            <ion-item @click="handleLogoutClick(navigate)">
-              <ion-label class="ion-text-bold">Logout</ion-label>
-            </ion-item>
-          </router-link>
+        <router-link to="/network" v-slot="{ navigate }">
+          <ion-item @click="navigate()">
+            <ion-label class="ion-text-bold">Network</ion-label>
+          </ion-item>
+        </router-link>
+        <router-link to="/localNotification" v-slot="{ navigate }">
+          <ion-item @click="navigate()">
+            <ion-label class="ion-text-bold">Local Notification</ion-label>
+          </ion-item>
+        </router-link>
+        <router-link to="/" v-slot="{ navigate }">
+          <ion-item @click="handleLogoutClick(navigate)">
+            <ion-label class="ion-text-bold">Logout</ion-label>
+          </ion-item>
+        </router-link>
       </ion-list>
     </ion-content>
   </ion-menu>
@@ -54,88 +54,100 @@
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding">
-        <router-view />
+      <router-view />
     </ion-content>
+    <div class="toast-background" v-if="showToastBackground"></div>
   </ion-page>
 </template>
 
 <script lang="ts">
-  import { IonButtons, IonContent, IonHeader, IonMenu, IonMenuButton, IonPage, IonTitle, IonToolbar, IonItem, IonList, IonLabel, IonIcon } from '@ionic/vue';
-  import { defineComponent, PropType } from 'vue';
-  import axios from 'axios';
-  import { useStore } from 'vuex';
-  import { useRouter } from 'vue-router';
-  import { mapActions } from 'vuex';
+import {
+  IonButtons,
+  IonContent,
+  IonHeader,
+  IonMenu,
+  IonMenuButton,
+  IonPage,
+  IonTitle,
+  IonToolbar,
+  IonItem,
+  IonList,
+  IonLabel,
+  IonIcon,
+} from "@ionic/vue";
+import { defineComponent, PropType } from "vue";
+import axios from "axios";
+import { useStore } from "vuex";
+import { useRouter } from "vue-router";
+import { mapActions } from "vuex";
 
-
-  export default defineComponent({
-    components: {
-      IonButtons,
-      IonContent,
-      IonHeader,
-      IonMenu,
-      IonMenuButton,
-      IonPage,
-      IonTitle,
-      IonToolbar,
-      IonItem,
-      IonList,
-      IonLabel,
-      IonIcon,
+export default defineComponent({
+  components: {
+    IonButtons,
+    IonContent,
+    IonHeader,
+    IonMenu,
+    IonMenuButton,
+    IonPage,
+    IonTitle,
+    IonToolbar,
+    IonItem,
+    IonList,
+    IonLabel,
+    IonIcon,
+  },
+  props: {
+    updateAuthentication: {
+      type: Function as PropType<(authenticated: boolean) => void>,
+      required: true,
     },
-    props: {
-      updateAuthentication: {
-        type: Function as PropType<(authenticated: boolean) => void>,
-        required: true,
-      },
-    },
-    setup(props) {
-      const store = useStore();
-      const handleLogoutClick = async (navigate: () => void) => {
-        try {
-          const apiToken = store.getters.getApiToken;
-          localStorage.clear();
-          props.updateAuthentication(false);
-          navigate();
-          console.log('lo fa nel logout:', apiToken);
-          await axios.post('https://rainwaterdrains.inyourlife.com/api/logout', {
-            headers: {
-              'Authorization': `Bearer ${apiToken}`
-            }
-          });
-        } catch (error) {
-          console.error('Errore durante il logout', error);
-        }
-      };
+  },
+  setup(props) {
+    const store = useStore();
+    const handleLogoutClick = async (navigate: () => void) => {
+      try {
+        const apiToken = store.getters.getApiToken;
+        localStorage.clear();
+        props.updateAuthentication(false);
+        navigate();
+        console.log("lo fa nel logout:", apiToken);
+        await axios.post("https://rainwaterdrains.inyourlife.com/api/logout", {
+          headers: {
+            Authorization: `Bearer ${apiToken}`,
+          },
+        });
+      } catch (error) {
+        console.error("Errore durante il logout", error);
+      }
+    };
 
-      return {
-        handleLogoutClick
-      };
-    }
-  });
+    return {
+      handleLogoutClick,
+    };
+  },
+});
 </script>
 
 <style scoped>
+ion-menu::part(container) {
+  border-radius: 20px 0 0 0;
 
-  ion-menu::part(container) {
-    border-radius: 20px 0 0 0;
+  box-shadow: 4px 0px 16px rgba(100, 100, 100, 0.5);
+}
 
-    box-shadow: 4px 0px 16px rgba(100, 100, 100, 0.5);
-  }
+ion-item {
+  text-decoration: none;
+}
 
-  ion-item {
-      text-decoration: none;
-  }
+ion-toolbar {
+  background-color: #a60016;
+}
 
-  ion-toolbar {
-    background-color: #A60016;
-  }
+ion-toolbar ion-title {
+  color: white;
+}
 
-  ion-toolbar ion-title {
-    color: white;
-  }
-
-  .list-md-lines-full .item-lines-default {
+.list-md-lines-full .item-lines-default {
   --inner-border-width: 0px;
   --border-width: 0;
 }

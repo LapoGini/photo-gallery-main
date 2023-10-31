@@ -5,43 +5,34 @@
         <h1>Foto:</h1>
       </div>
       <div class="sub-container">
-        
         <div class="box-image">
-            <h2>
-                TITOLO
-            </h2>
-            <h3>
-                {{photoTitle}}
-            </h3>
-            <img :src="photoFilePath" alt="Foto utente" />
-            <div class="photo-data">
-                <p>
-                    Accuratezza posizione:
-                </p>
-                <p>
-                    {{formattedPhotoAccuracy}}
-                </p>
-                <div class="cooridnates">
-                    <p>
-                        Lat: {{photoLatitude}}
-                    </p>
-                    <p>
-                        Long: {{photoLongitude}}
-                    </p>
-                </div>
+          <h2>TITOLO</h2>
+          <h3>
+            {{ photoTitle }}
+          </h3>
+          <img :src="photoFilePath" alt="Foto utente" />
+          <div class="photo-data">
+            <p>Accuratezza posizione:</p>
+            <p>
+              {{ formattedPhotoAccuracy }}
+            </p>
+            <div class="cooridnates">
+              <p>Lat: {{ photoLatitude }}</p>
+              <p>Long: {{ photoLongitude }}</p>
             </div>
+          </div>
         </div>
         <div class="box-map">
           <div id="map"></div>
         </div>
-        
+
         <ion-button @click="goBack">
-            ANNULLA
+          ANNULLA
           <ion-icon :icon="arrowRedoCircleSharp"></ion-icon>
         </ion-button>
         <router-link to="/specifiche">
           <ion-button>
-              SALVA
+            SALVA
             <ion-icon :icon="arrowRedoCircleSharp"></ion-icon>
           </ion-button>
         </router-link>
@@ -53,80 +44,92 @@
 
 
 <script setup lang="ts">
-    import { IonPage, IonContent, IonIcon, IonButton, IonSelect, IonSelectOption, IonLabel, IonInput, IonTextarea } from '@ionic/vue';
-    import { arrowRedoCircleSharp } from 'ionicons/icons';
-    import { useRouter } from 'vue-router';
-    import { useNetwork } from '@/composables/useNetwork';
-    import axios from 'axios';
-    import { Ref, ref, computed, onMounted } from 'vue';
-    import { useStore } from 'vuex';
+import {
+  IonPage,
+  IonContent,
+  IonIcon,
+  IonButton,
+  IonSelect,
+  IonSelectOption,
+  IonLabel,
+  IonInput,
+  IonTextarea,
+} from "@ionic/vue";
+import { arrowRedoCircleSharp } from "ionicons/icons";
+import { useRouter } from "vue-router";
+import { useNetwork } from "@/composables/useNetwork";
+import axios from "axios";
+import { Ref, ref, computed, onMounted } from "vue";
+import { useStore } from "vuex";
 
+const { networkStatus, logCurrentNetworkStatus, showToastBackground } =
+  useNetwork();
+const store = useStore();
+const router = useRouter();
+const photoFilePath = ref(localStorage.getItem("photoPath"));
+const photoTitle = ref(localStorage.getItem("photoTitle"));
+const photoAccuracy = ref(localStorage.getItem("photoAccuracy"));
+const photoLatitude = ref(localStorage.getItem("photoLatitude"));
+const photoLongitude = ref(localStorage.getItem("photoLongitude"));
 
-    const { networkStatus, logCurrentNetworkStatus, showToastBackground } = useNetwork();
-    const store = useStore();
-    const router = useRouter();
-    const photoFilePath = ref(localStorage.getItem('photoPath'));
-    const photoTitle = ref(localStorage.getItem('photoTitle'));
-    const photoAccuracy = ref(localStorage.getItem('photoAccuracy'));
-    const photoLatitude = ref(localStorage.getItem('photoLatitude'));
-    const photoLongitude = ref(localStorage.getItem('photoLongitude'));
+const photoAccuracyNumber = parseFloat(photoAccuracy.value || "0");
+const formattedPhotoAccuracy = !isNaN(photoAccuracyNumber)
+  ? photoAccuracyNumber.toFixed(2)
+  : "N/A";
 
-    const photoAccuracyNumber = parseFloat(photoAccuracy.value || "0");
-    const formattedPhotoAccuracy = !isNaN(photoAccuracyNumber) ? photoAccuracyNumber.toFixed(2) : 'N/A';
+const initMap = async () => {
+  const position = {
+    lat: parseFloat(photoLatitude.value || "0"),
+    lng: parseFloat(photoLongitude.value || "0"),
+  };
 
-    const initMap = async () => {
-        const position = {
-            lat: parseFloat(photoLatitude.value || "0"),
-            lng: parseFloat(photoLongitude.value || "0"),
-        };
+  const { Map } = await google.maps.importLibrary("maps");
+  const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
 
-        const { Map } = await google.maps.importLibrary("maps");
-        const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+  const map = new Map(document.getElementById("map"), {
+    zoom: 21,
+    center: position,
+    mapId: "mappa_foto",
+    mapTypeId: google.maps.MapTypeId.SATELLITE,
+    rotateControl: false,
+    streetViewControl: false,
+    mapTypeControl: false,
+  });
 
-        const map = new Map(document.getElementById("map"), {
-            zoom: 21,
-            center: position,
-            mapId: "mappa_foto",
-            mapTypeId: google.maps.MapTypeId.SATELLITE,
-            rotateControl: false,
-            streetViewControl: false,
-            mapTypeControl: false,
-        });
+  const marker = new AdvancedMarkerElement({
+    map: map,
+    position: position,
+    title: "Posizione della foto",
+  });
+};
 
-        const marker = new AdvancedMarkerElement({
-            map: map,
-            position: position,
-            title: "Posizione della foto"
-        });
-    };
+const getNetworkStatus = async () => {
+  await logCurrentNetworkStatus();
+};
 
-    const getNetworkStatus = async () => {
-        await logCurrentNetworkStatus();
-    };
+const goBack = () => {
+  router.go(-1);
+};
 
-    const goBack = () => {
-        router.go(-1);
-    }
-
-    onMounted(async () => {
-        if (typeof google === "undefined" || !google.maps) {
-            setTimeout(() => {
-                initMap();
-            }, 1000);
-        } else {
-            initMap();
-        }
-    });
+onMounted(async () => {
+  if (typeof google === "undefined" || !google.maps) {
+    setTimeout(() => {
+      initMap();
+    }, 1000);
+  } else {
+    initMap();
+  }
+});
 </script>
 
 
 <style scoped>
 ion-content {
-  --background:#370006;
+  --background: #370006;
 }
 
 .main-container {
-  background-color: #A60016;
+  background-color: #a60016;
   border-top: 3px solid rgb(255, 255, 255);
   border-bottom: 3px solid rgb(255, 255, 255);
   width: 100%;
@@ -157,7 +160,7 @@ ion-button {
   width: 100%;
   --border-radius: 25px;
   margin-top: 20px;
-  --background: #A60016;
+  --background: #a60016;
   font-weight: bolder;
 }
 
@@ -166,19 +169,8 @@ ion-button {
 }
 
 .cooridnates {
-    display: flex;
-    justify-content: space-around;
-}
-
-.toast-background {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
-  z-index: 1000;
+  display: flex;
+  justify-content: space-around;
 }
 
 capacitor-google-map {
@@ -188,8 +180,7 @@ capacitor-google-map {
 }
 
 #map {
-    height: 400px;
-    width: 100%;
+  height: 400px;
+  width: 100%;
 }
-
 </style>

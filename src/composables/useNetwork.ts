@@ -38,9 +38,10 @@ export const useNetwork = () => {
       const toastMessage = `Sei ${status.connected ? 'Online!' : 'Offline!'}`;
       const toast = await toastController.create({
         position: 'middle',
+        mode: 'ios',   
         color: toastColor,
         message: toastMessage,
-        duration: 7000,
+        duration: 1000,
       });
       showToastBackground.value = true;
       await toast.present();
