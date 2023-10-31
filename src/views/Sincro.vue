@@ -23,13 +23,11 @@ import {
   IonContent,
   IonIcon,
   IonButton,
-  IonSelect,
-  IonSelectOption,
-  IonLabel,
+  IonLoading,
 } from "@ionic/vue";
 import { arrowRedoCircleSharp } from "ionicons/icons";
 import { useRouter } from "vue-router";
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref, watch, defineComponent } from "vue";
 import {
   countItemsInDB,
   getItemsFromDB,
@@ -82,19 +80,33 @@ const fetchAllStreets = async () => {
     console.error("Errore durante il recupero delle vie:", error);
   }
 };
-async function deleteLocalDB() {
+const deleteLocalDB = async () => {
   console.log("Inizio deleteLocalDB");
-  await deleteDB("rwd_streets");
+  try {
+    await deleteDB("rwd_streets", {
+      blocked: () => {
+        console.warn(
+          "Database deletion is blocked. Retrying in 3 seconds..."
+        );
+        setTimeout(deleteLocalDB, 3000);
+      },
+    });
+  } catch (error) {
+    console.error("Errore durante l'eliminazione del DB:", error);
+  }
 }
 
 const synchronizeItemsWithServer = async () => {
   const unsynchronizedItems = await getItemsFromDB();
   console.log("Items NON SINCRONIZZTi", unsynchronizedItems);
   for (const item of unsynchronizedItems) {
-    console.log(item);
+    console.log("ITEM", item);
     const picTitle = item.pic;
-    console.log(picTitle);
-    const photo = await getPhotoFromDB(picTitle);
+    const parts = picTitle.split(".");
+    parts.pop();
+    const baseName = parts.join(".");
+    console.log("basename", baseName);
+    const photo = await getPhotoFromDB(baseName);
     console.log(photo);
     if (!photo || !photo.base64Data) {
       console.error("Photo non trovata in indexedDB");
@@ -103,7 +115,10 @@ const synchronizeItemsWithServer = async () => {
     const base64ImageString = await blobToBase64(photo.base64Data);
     try {
       const apiToken = store.getters.getApiToken;
-      const responsePhoto = await uploadPhotoToServer(base64ImageString);
+      const responsePhoto = await uploadPhotoToServer(
+        base64ImageString,
+        item.pic
+      );
       const response = await axios.post(
         "https://rainwaterdrains.inyourlife.com/api/item",
         item,
@@ -175,13 +190,17 @@ const synchronizeStreetsWithServer = async () => {
     console.log("Items sincronizzati");
   } catch (error) {
     console.error("Errore in synchronizeItemsWithServer:", error);
+  } finally {
+    window.location.reload();
   }
 };
 
+/*
 watch(caditoieCount, (newValue, oldValue) => {
   console.log("Caditoie da sincronizzare:", newValue);
   loadCaditoieCount();
 });
+*/
 
 onMounted(async () => {
   loadCaditoieCount();
@@ -244,4 +263,5 @@ ion-button {
 .sincro-caditoie {
   color: white;
 }
+
 </style>
