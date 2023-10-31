@@ -11,6 +11,12 @@
         SINCRONIZZA CADITOIE
         <ion-icon :icon="arrowRedoCircleSharp"></ion-icon>
       </ion-button>
+      <ion-loading
+        class="custom-loading"
+        v-if="isLoading"
+        :isOpen="true"
+        message="Synchronizing..."
+      ></ion-loading>
     </ion-content>
     <div class="toast-background" v-if="showToastBackground"></div>
   </ion-page>
@@ -48,6 +54,7 @@ import axios from "axios";
 import { deleteDB } from "idb";
 
 const caditoieCount = ref(0);
+const isLoading = ref(false);
 const store = useStore();
 const { networkStatus, logCurrentNetworkStatus, showToastBackground } =
   useNetwork();
@@ -144,6 +151,8 @@ const synchronizeItemsWithServer = async () => {
 };
 
 const synchronizeStreetsWithServer = async () => {
+  isLoading.value = true;
+  console.log(isLoading.value);
   const unsynchronizedStreets = await getUnsynchronizedStreetsFromDB();
   console.log("Vie NON SINCRONIZZTE", unsynchronizedStreets);
   for (const street of unsynchronizedStreets) {
@@ -191,6 +200,7 @@ const synchronizeStreetsWithServer = async () => {
   } catch (error) {
     console.error("Errore in synchronizeItemsWithServer:", error);
   } finally {
+    isLoading.value = false;
     window.location.reload();
   }
 };
@@ -264,4 +274,9 @@ ion-button {
   color: white;
 }
 
+ion-loading.custom-loading {
+  --background: #a6001689;
+  --spinner-color: #ffffff;
+  color: #ffffff;
+}
 </style>
