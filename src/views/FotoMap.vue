@@ -2,13 +2,13 @@
   <ion-page>
     <ion-content>
       <div class="main-container">
-        <h1>Foto</h1>
+        <h1>FOTO</h1>
       </div>
       <div class="sub-container">
         <div class="box-image">
           <h4>Accuratezza posizione:</h4>
           <h6>
-            {{ formattedPhotoAccuracy }}
+            {{ formattedPhotoAccuracy }} m
           </h6>
           <img :src="photoFilePath" alt="Foto utente" />
           <div class="photo-data">

@@ -10,7 +10,7 @@
           v-for="tagType in tags"
           :key="tagType.tag_type_id"
         >
-          <ion-label class="choose-client">
+          <ion-label>
             {{ tagType.tag_type_name }}:
           </ion-label>
           <ion-select
@@ -67,9 +67,10 @@
         <div class="input-container">
           <ion-label>Note:</ion-label>
           <ion-textarea
-            class="input-box"
+            class="input-box-textarea"
             v-model="notes"
             placeholder="Inserisci le tue note qui"
+            auto-grow="true"
           ></ion-textarea>
         </div>
 
@@ -476,9 +477,11 @@ ion-label {
   margin-top: 10px;
 }
 
-ion-select {
+ion-select.my-select {
   background-color: rgb(255, 255, 254);
   color: black;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 ion-icon {
@@ -493,6 +496,14 @@ ion-button {
   margin-top: 20px;
   --background: #a60016;
   font-weight: bolder;
+}
+
+.input-box-textarea {
+    max-height: 130px;
+    overflow-y: auto;
+    padding: 10px;
+    background-color: white;
+    color: black;
 }
 
 .box-select,

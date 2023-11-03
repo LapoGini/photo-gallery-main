@@ -2,62 +2,70 @@
   <ion-page>
     <ion-content>
       <div class="main-container">
-        <h1>Scansioni</h1>
+        <h1>SCANSIONI</h1>
       </div>
       <div class="sub-container">
         <div class="input-buttons">
           <div class="date-buttons">
-            <ion-button @click="setToday">Oggi</ion-button>
-            <ion-button @click="setYesterday">Ieri</ion-button>
-            <h2>
-              Scegli la data:
-            </h2>
-            <input class="input-date" id="dateInput" type="date" v-model="rawSelectedDate" ref="datePicker">
+            <div class="button-group">
+              <ion-button @click="setYesterday">Ieri</ion-button>
+              <ion-button @click="setToday" class="margin-left-button"
+                >Oggi</ion-button
+              >
+            </div>
+            <h2>Scegli la data:</h2>
+            <input
+              class="input-date"
+              id="dateInput"
+              type="date"
+              v-model="rawSelectedDate"
+              ref="datePicker"
+            />
           </div>
         </div>
         <div class="scansioni" v-if="selectedDate !== null">
           <div class="box-title">
-              <h5>
-                Visualizza le caditoie scansionate il:
-              </h5>
-              <p class="choose-date">
-                {{formattedSelectedDate}}
-              </p>
+            <h5>Visualizza le caditoie scansionate il:</h5>
+            <p class="choose-date">
+              {{ formattedSelectedDate }}
+            </p>
           </div>
         </div>
-          <ion-button @click="getCaditoieScansionate()">
-            SCANSIONA
-            <ion-icon :icon="arrowRedoCircleSharp"></ion-icon>
-          </ion-button>
+        <ion-button @click="getCaditoieScansionate()">
+          SCANSIONA
+          <ion-icon :icon="arrowRedoCircleSharp"></ion-icon>
+        </ion-button>
+        <h3 v-if="!networkStatus" class="connection-message">" PER VISUALIZZARE LE CADITOIE SCANSIONATE È NECESSARIA UNA CONNESSIONE AD INTERNET "</h3>
       </div>
       <div class="caditoie-scansionate">
-          <div class="card" v-for="caditoia in caditoie" :key="caditoia.id">
-              <div class="card-header">
-                <div class="address">
-                  <span class="street-name">{{ caditoia.strada_nome }}</span> - <span class="city-name">{{ caditoia.comune_nome }}</span>
-                </div>
-                <span class="date">{{ caditoia.data_caditoia }}</span>
-              </div>
-              <div class="card-body">
-                  <div class="card-image">
-                      <img :src="caditoia.foto_id" alt="Foto caditoia">
-                  </div>
-                  <div class="card-details">
-                      <div class="coordinates">
-                          Lat: <span class="latitude">{{ caditoia.caditoie_lat }}</span>,
-                          Lng: <span class="longitude">{{ caditoia.caditoie_lng }}</span>
-                      </div>
-                      <div class="tipologia">{{ caditoia.tipologia_tag_id }}</div>
-                      <div class="ubicazione">{{ caditoia.ubicazione || 'N/A' }}</div>
-                      <div class="stato">{{ caditoia.stato_tag_id }}</div>
-                  </div>
-              </div>
-              <div class="card-footer">
-                  Note: <span class="notes">{{ caditoia.caditoie_note || 'Nessuna nota' }}</span>
-              </div>
+        <div class="card" v-for="caditoia in caditoie" :key="caditoia.id">
+          <div class="card-header">
+            <div class="address">
+              <span class="street-name">{{ caditoia.strada_nome }}</span> -
+              <span class="city-name">{{ caditoia.comune_nome }}</span>
+            </div>
+            <span class="date">{{ caditoia.data_caditoia }}</span>
           </div>
+          <div class="card-body">
+            <div class="card-image">
+              <img :src="caditoia.foto_id" alt="Foto caditoia" />
+            </div>
+            <div class="card-details">
+              <div class="coordinates">
+                Lat: <div class="latitude">{{ caditoia.caditoie_lat }}</div>
+                Lng: <div class="longitude">{{ caditoia.caditoie_lng }}</div>
+              </div>
+              <div class="tipologia">{{ caditoia.tipologia_tag_id }}</div>
+              <div class="ubicazione">{{ caditoia.ubicazione || "N/A" }}</div>
+              <div class="stato">{{ caditoia.stato_tag_id }}</div>
+            </div>
+          </div>
+          <div class="card-footer" v-if="caditoia.caditoie_note">
+            Note:
+            <span class="notes">{{ caditoia.caditoie_note }}</span>
+          </div>
+        </div>
       </div>
-
     </ion-content>
     <div class="toast-background" v-if="showToastBackground"></div>
   </ion-page>
@@ -65,99 +73,110 @@
 
 
 <script setup lang="ts">
-import { IonPage, IonContent, IonIcon, IonButton, IonSelect, IonSelectOption, IonLabel, IonDatetime } from '@ionic/vue';
-import { arrowRedoCircleSharp } from 'ionicons/icons';
-import { useRouter } from 'vue-router';
-import axios from 'axios';
-import { useNetwork } from '@/composables/useNetwork';
-import { ref, watch  } from 'vue';
-import { useStore } from 'vuex';
+import {
+  IonPage,
+  IonContent,
+  IonIcon,
+  IonButton,
+  IonSelect,
+  IonSelectOption,
+  IonLabel,
+  IonDatetime,
+} from "@ionic/vue";
+import { arrowRedoCircleSharp } from "ionicons/icons";
+import { useRouter } from "vue-router";
+import axios from "axios";
+import { useNetwork } from "@/composables/useNetwork";
+import { ref, watch } from "vue";
+import { useStore } from "vuex";
+
 
 const formatDate = (date: Date) => {
-  const dd = date.getDate().toString().padStart(2, '0');
-  const mm = (date.getMonth() + 1).toString().padStart(2, '0'); // i mesi vanno da 0 a 11, quindi aggiungo 1
+  const dd = date.getDate().toString().padStart(2, "0");
+  const mm = (date.getMonth() + 1).toString().padStart(2, "0"); // i mesi vanno da 0 a 11, quindi aggiungo 1
   const yyyy = date.getFullYear().toString();
   return `${dd}/${mm}/${yyyy}`;
-}
+};
 
 const datePicker = ref<HTMLInputElement | null>(null);
-const rawSelectedDate = ref<string | null>(new Date().toISOString().slice(0, 10));
+const rawSelectedDate = ref<string | null>(
+  new Date().toISOString().slice(0, 10)
+);
 const formattedSelectedDate = ref<string | null>(formatDate(new Date()));
 const store = useStore();
 const caditoie = ref<Array<any>>([]);
 
-
 watch(rawSelectedDate, (newValue) => {
-    if (newValue) {
-        const parts = newValue.split('-');
-        const dateObj = new Date(+parts[0], +parts[1] - 1, +parts[2]);
-        formattedSelectedDate.value = formatDate(dateObj);
-    } else {
-        formattedSelectedDate.value = null;
-    }
+  if (newValue) {
+    const parts = newValue.split("-");
+    const dateObj = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+    formattedSelectedDate.value = formatDate(dateObj);
+  } else {
+    formattedSelectedDate.value = null;
+  }
 });
 
-
 const setToday = () => {
-    const today = new Date();
-    rawSelectedDate.value = today.toISOString().slice(0, 10);
-}
+  const today = new Date();
+  rawSelectedDate.value = today.toISOString().slice(0, 10);
+};
 
 const setYesterday = () => {
-    const yesterday = new Date(Date.now() - 86400000);
-    rawSelectedDate.value = yesterday.toISOString().slice(0, 10);
-}
+  const yesterday = new Date(Date.now() - 86400000);
+  rawSelectedDate.value = yesterday.toISOString().slice(0, 10);
+};
 
 const openDatePicker = () => {
   datePicker.value?.focus();
-}
-
+};
 
 const getCaditoieScansionate = async () => {
   try {
     const apiToken = store.getters.getApiToken;
-        const payload = {
-            data: {
-                giorno: formattedSelectedDate,
-                user: localStorage.getItem('user'),
-            }
-        };
-        const response = await axios.post('https://rainwaterdrains.inyourlife.com/api/scansioni', payload, {
-          headers: {
-            'Authorization': `Bearer ${apiToken}`
-          }
-        });
+    const payload = {
+      data: {
+        giorno: formattedSelectedDate,
+        user: localStorage.getItem("user"),
+      },
+    };
+    const response = await axios.post(
+      "https://rainwaterdrains.inyourlife.com/api/scansioni",
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${apiToken}`,
+        },
+      }
+    );
 
     if (response.data.result) {
       caditoie.value = response.data.caditoie;
 
       console.log(caditoie);
-
     } else {
-      console.error('Errore nella risposta dell\'API:', response.data.error);
+      console.error("Errore nella risposta dell'API:", response.data.error);
     }
   } catch (error) {
-    console.error('Errore durante la chiamata API:', error);
+    console.error("Errore durante la chiamata API:", error);
   }
 };
 
-
-const { networkStatus, logCurrentNetworkStatus, showToastBackground } = useNetwork();
+const { networkStatus, logCurrentNetworkStatus, showToastBackground } =
+  useNetwork();
 
 const getNetworkStatus = async () => {
   await logCurrentNetworkStatus();
 };
-
 </script>
 
 
 <style scoped>
 ion-content {
-  --background:#370006;
+  --background: #370006;
 }
 
 .main-container {
-  background-color: #A60016;
+  background-color: #a60016;
   border-top: 3px solid rgb(255, 255, 255);
   border-bottom: 3px solid rgb(255, 255, 255);
   width: 100%;
@@ -174,7 +193,7 @@ h1 {
 .sub-container {
   width: 90%;
   margin: auto;
-  margin-top: 50px;
+  margin-top: 20px;
   color: white;
 }
 
@@ -190,8 +209,8 @@ ion-select {
 }
 
 ion-datetime {
-background-color: rgb(33, 33, 33);
-max-width: 100%;
+  background-color: rgb(33, 33, 33);
+  max-width: 100%;
 }
 
 ion-icon {
@@ -204,7 +223,7 @@ ion-button {
   width: 100%;
   --border-radius: 25px;
   margin-top: 20px;
-  --background: #A60016;
+  --background: #a60016;
   font-weight: bolder;
 }
 
@@ -217,43 +236,56 @@ h2 {
   flex-direction: column;
   align-items: center;
   width: 100%;
+  margin-top: 20px;
 }
 
 .choose-date {
   padding: 5px;
   border: 1px solid white;
   border-radius: 5px;
+  margin: 10px 0;
+}
+
+.button-group {
+  display: flex;
+  justify-content: start;
+}
+
+.margin-left-button {
+  margin-left: 10px;
 }
 
 .input-date {
   width: 100%;
   --border-radius: 25px;
   margin-top: 20px;
-  --background: #A60016;
+  --background: #a60016;
   font-weight: bolder;
   border: none;
   padding: 10px 15px;
   cursor: pointer;
+  color: black;
 }
 
 .input-date:focus {
-    outline: none;
-    --background: #A60016;
+  outline: none;
+  --background: #a60016;
 }
 
 .caditoie-scansionate {
-  margin-top: 30px;
+  margin: 20px;
 }
 
 .card {
-    background-color: #d9d9d9;
-    border: 1px solid #ccc;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  background-color: #d9d9d9;
+  border: 1px solid #ccc;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 20px 0;
 }
 
 .address {
@@ -261,31 +293,34 @@ h2 {
 }
 
 .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .card-body {
-    display: flex;
-    gap: 15px;
+  display: flex;
+  gap: 15px;
 }
 
 .card-image img {
-    width: 100px;
-    height: 100px;
-    object-fit: cover;
-    border-radius: 8px;
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
 }
 
 .card-details {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
 .notes {
-    color: #777;
+  color: #777;
 }
 
+.connection-message{
+  text-align: center;
+}
 </style>

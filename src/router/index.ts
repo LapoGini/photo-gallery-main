@@ -40,16 +40,6 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Specifiche',
   },
   {
-    path: '/network',
-    component: Network,
-    name: 'Network',
-  },
-  {
-    path: '/localNotification',
-    component: LocalNotification,
-    name: 'LocalNotification',
-  },
-  {
     path: '/sincro',
     component: Sincro,
     name: 'Sincro',

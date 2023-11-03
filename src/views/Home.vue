@@ -5,7 +5,7 @@
         <h1>SCELTA CLIENTE</h1>
       </div>
       <div class="sub-container">
-        <ion-label class="choose-client"> Scegli il cliente:</ion-label>
+        <ion-label class="choose-client text-center"> Scegli il cliente:</ion-label>
         <ion-select
           v-model="selectedClient"
           label="Cliente selezionato..."

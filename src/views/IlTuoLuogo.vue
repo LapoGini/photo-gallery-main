@@ -2,7 +2,7 @@
   <ion-page>
     <ion-content>
       <div class="main-container">
-        <h1>Il tuo luogo:</h1>
+        <h1>IL TUO LUOGO</h1>
         <h4>
           {{ cityName }} ({{ cityDistrict }})
           <br />

@@ -347,7 +347,7 @@ ion-button {
 }
 
 .caditoia-list {
-  max-height: 100px;
+  max-height: 300px;
   overflow-y: auto;
 }
 

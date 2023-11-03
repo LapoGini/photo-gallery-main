@@ -27,16 +27,6 @@
             <ion-label class="ion-text-bold">Scansioni</ion-label>
           </ion-item>
         </router-link>
-        <router-link to="/network" v-slot="{ navigate }">
-          <ion-item @click="navigate()">
-            <ion-label class="ion-text-bold">Network</ion-label>
-          </ion-item>
-        </router-link>
-        <router-link to="/localNotification" v-slot="{ navigate }">
-          <ion-item @click="navigate()">
-            <ion-label class="ion-text-bold">Local Notification</ion-label>
-          </ion-item>
-        </router-link>
         <router-link to="/" v-slot="{ navigate }">
           <ion-item @click="handleLogoutClick(navigate)">
             <ion-label class="ion-text-bold">Logout</ion-label>
@@ -136,6 +126,7 @@ ion-menu::part(container) {
 
 ion-item {
   text-decoration: none;
+  --border-width: 0;
 }
 
 ion-toolbar {
