@@ -2,20 +2,16 @@
   <ion-page>
     <ion-content>
       <div class="main-container">
-        <h1>Foto:</h1>
+        <h1>Foto</h1>
       </div>
       <div class="sub-container">
         <div class="box-image">
-          <h2>TITOLO</h2>
-          <h3>
-            {{ photoTitle }}
-          </h3>
+          <h4>Accuratezza posizione:</h4>
+          <h6>
+            {{ formattedPhotoAccuracy }}
+          </h6>
           <img :src="photoFilePath" alt="Foto utente" />
           <div class="photo-data">
-            <p>Accuratezza posizione:</p>
-            <p>
-              {{ formattedPhotoAccuracy }}
-            </p>
             <div class="cooridnates">
               <p>Lat: {{ photoLatitude }}</p>
               <p>Long: {{ photoLongitude }}</p>

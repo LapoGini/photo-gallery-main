@@ -97,6 +97,9 @@
 
 
 <script setup lang="ts">
+declare var cordova: any;
+declare var window: any;
+
 import {
   IonPage,
   IonContent,
@@ -122,6 +125,9 @@ import { ref, onMounted, watch, computed } from "vue";
 import { useStore } from "vuex";
 import { getTagsFromDB } from "@/services/db_tags.js";
 import { saveItemToDB } from "@/services/db_items.js";
+import { Filesystem, Directory } from "@capacitor/filesystem";
+import imageCompression from 'browser-image-compression';
+
 
 interface TagType {
   tag_type_id: string;
@@ -165,7 +171,6 @@ const fetchTags = async () => {
       }
     );
     tags.value = response.data.data;
-    console.log("Tags:", tags.value);
   } catch (error) {
     console.error("Errore durante il recupero dei tag:", error);
     tags.value = await getTagsFromDB();
@@ -180,7 +185,6 @@ const isGrigliaSelected = computed(() => {
       const tag = tagType.tags.find((t) => t.tag_id == selectedTagId);
       if (tag !== undefined) {
         if (tag.tag_name === "Griglia") {
-          console.log("qua funzia");
           return true;
         }
       }
@@ -192,34 +196,28 @@ const isGrigliaSelected = computed(() => {
 watch(
   selectedTags,
   (newValue) => {
-    console.log("selectedTags changed:", newValue);
     localStorage.setItem("selectedTags", JSON.stringify(newValue));
   },
   { deep: true }
 );
 
 watch(address, (newValue) => {
-  console.log("Address changed:", newValue);
   localStorage.setItem("address", newValue);
 });
 
 watch(notes, (newValue) => {
-  console.log("Notes changed:", newValue);
   localStorage.setItem("notes", newValue);
 });
 
 watch(height, (newValue) => {
-  console.log("height changed:", newValue);
   localStorage.setItem("height", newValue);
 });
 
 watch(width, (newValue) => {
-  console.log("width changed:", newValue);
   localStorage.setItem("width", newValue);
 });
 
 watch(depth, (newValue) => {
-  console.log("depth changed:", newValue);
   localStorage.setItem("depth", newValue);
 });
 
@@ -243,6 +241,7 @@ const timestampString = localStorage.getItem("photoTimestamp");
 const timestampInMilliseconds = Number(timestampString);
 const date = new Date(timestampInMilliseconds);
 const formattedDate = date.toISOString().slice(0, 19).replace("T", " ");
+const unixTimestamp = date.getTime(); 
 
 const streetValue = localStorage.getItem("street");
 const addStreetValue = localStorage.getItem("addStreet");
@@ -250,12 +249,11 @@ const addStreetValue = localStorage.getItem("addStreet");
 const user_id = localStorage.getItem("user");
 const lat = localStorage.getItem("photoLatitude");
 const long = localStorage.getItem("photoLongitude");
-const id_da_app = `${formattedDate}-${user_id}-${lat}-${long}`;
+const id_da_app = `${unixTimestamp}_${user_id}_${lat}_${long}`;
 
 const tagsFromLocalStorage = JSON.parse(
   localStorage.getItem("selectedTags") || "{}"
 );
-console.log("Tags from localStorage:", tagsFromLocalStorage);
 
 const clearLocalStorageExceptUser = () => {
   for (let key in localStorage) {
@@ -275,16 +273,113 @@ const connection = computed(() => {
   return savedLocally.value ? "Non sei connesso" : "Sei connesso";
 });
 
+const saveItemToDeviceMemory = async (data: any) => {
+  const fileName = `items/${id_da_app}.json`;
+
+  // Funzione di utilità per effettuare il salvataggio
+  const saveToDirectory = async (directory: Directory) => {
+    try {
+      const base64Data = stringToBase64(JSON.stringify(data));
+      const result = await Filesystem.writeFile({
+        path: fileName,
+        data: base64Data,
+        directory: directory,
+        recursive: true,
+      });
+
+      if (result.uri) {
+        console.log(`Item saved to ${directory} at:`, result.uri);
+      } else {
+        console.warn(
+          `File might not have been saved successfully to ${directory}.`,
+          result
+        );
+      }
+    } catch (err) {
+      if (err.message === "FILE_NOTCREATED") {
+        alert(
+          `Errore: Impossibile creare il file in ${directory}. Controlla i permessi o lo spazio disponibile.`
+        );
+      } else {
+        console.error(`Error saving item to ${directory}:`, err.message || err);
+      }
+    }
+  };
+
+  // Salva in memoria interna
+  await saveToDirectory(Directory.Documents);
+
+  // Salva in memoria esterna (SD)
+  await saveToDirectory(Directory.ExternalStorage);
+};
+
+// Funzione per convertire una stringa in base64
+const stringToBase64 = (str: string) => {
+  let encoded = "";
+  try {
+    let encoder = new TextEncoder();
+    let data = encoder.encode(str);
+    encoded = btoa(String.fromCharCode.apply(null, data as any));
+  } catch (e) {
+    console.error("Failed to convert string to base64:", e);
+  }
+  return encoded;
+};
+
+// FUNZIONE PER COMPRIMERE L'IMMAGINE IN BASE&$
+const compressImage = async (imageBlob: Blob): Promise<Blob> => {
+  const options = {
+    maxSizeMB: 0.08,
+    maxWidthOrHeight: 600,
+    useWebWorker: true
+  };
+
+  const imageFile = new File([imageBlob], "compressedImage.jpeg", { type: "image/jpeg" });
+
+  try {
+    return await imageCompression(imageFile, options);
+  } catch (error) {
+    console.error('Error compressing the image:', error);
+    return imageBlob;
+  }
+}
+
+
+// CREA LA CARTELLA ITEMS NELLA MEOMRIA INTERNA ED ESTRENA
+const createItemsDirectory = async (directory: Directory) => {
+  try {
+    await Filesystem.mkdir({
+      path: "items",
+      directory: directory,
+      recursive: true,
+    });
+  } catch (err) {
+    if (err.message.includes("Directory exists")) {
+      console.log(`Directory 'items' already exists in ${directory}.`);
+    } else {
+      console.error(
+        `Error creating items directory in ${directory}:`,
+        err.message || err
+      );
+    }
+  }
+};
+
+// Funzione per gestire gli errori
+const onError = (error: any) => {
+  console.error("Error:", error);
+};
+
 const saveItem = async () => {
   const picTitle = localStorage.getItem("photoTitle");
-  console.log(picTitle);
   const photo = await getPhotoFromDB(picTitle);
-  console.log(photo);
   if (!photo || !photo.base64Data) {
-    console.error("Photo non trovata in indexedDB");
     return;
   }
-  const base64ImageString = await blobToBase64(photo.base64Data);
+  const compressedImageBlob = await compressImage(photo.base64Data);
+  const base64ImageStringCompressed = await blobToBase64(compressedImageBlob);
+  const base64ImageStringOriginal = await blobToBase64(photo.base64Data);
+
   const itemData = {
     user_id: user_id,
     latitude: lat,
@@ -300,14 +395,28 @@ const saveItem = async () => {
     civic: localStorage.getItem("address"),
     note: localStorage.getItem("notes"),
     id_da_app: id_da_app,
+    base64ImageString: base64ImageStringOriginal,
     tags: localStorage.getItem("selectedTags")
       ? localStorage.getItem("selectedTags")
       : null,
   };
+
+  await createItemsDirectory(Directory.Documents);
+  await createItemsDirectory(Directory.ExternalStorage);
+
+
+  //const compressedItemData = ;
+  //await saveItemToDeviceMemory(itemData);
+  await saveItemToDeviceMemory({ ...itemData, base64ImageString: base64ImageStringCompressed });
+
+
+  console.log("Original length:", JSON.stringify(itemData).length);
+  //console.log("Compressed length:", compressedItemData.length);
+
+
   try {
-    console.log("ITEM DATA", itemData);
     const apiToken = store.getters.getApiToken;
-    const responsePhoto = await uploadPhotoToServer(base64ImageString);
+    const responsePhoto = await uploadPhotoToServer(base64ImageStringOriginal);
     const response = await axios.post(
       "https://rainwaterdrains.inyourlife.com/api/item",
       itemData,
@@ -317,12 +426,7 @@ const saveItem = async () => {
         },
       }
     );
-    console.log(
-      "RISPOSTA DELLA CHIAMATA API PER SALVARE L'ITEM",
-      response.data
-    );
     if (response.data) {
-      console.log("Item saved:", response.data);
       isOpen.value = true;
       savedLocally.value = false;
       clearLocalStorageExceptUser();

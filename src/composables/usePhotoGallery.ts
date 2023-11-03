@@ -9,10 +9,7 @@ import axios from 'axios';
 export const uploadPhotoToServer = async (imageBlob: Blob, itemPic?: string) => {
   try {
     const apiToken = localStorage.getItem('apiToken');
-    console.log('APITOKEN PER LA FOTO:', apiToken);
-    console.log(typeof imageBlob, imageBlob);
     const base64ImageString = await imageBlob;
-    console.log('IMMAGINE CONVERTITA IN BASE64:', base64ImageString);
 
     const pic = localStorage.getItem('photoTitle') ? localStorage.getItem('photoTitle') + '.jpg' : itemPic;
 
@@ -21,14 +18,12 @@ export const uploadPhotoToServer = async (imageBlob: Blob, itemPic?: string) => 
       imageName: pic,
       cartellaDelGiorno: new Date().toISOString().split('T')[0]
     };
-    console.log('DATA CHE PASSO ALL\'IMMAGINE:', data);
 
     const response = await axios.post('https://rainwaterdrains.inyourlife.com/api/saveImage', data, {
       headers: {
         'Authorization': `Bearer ${apiToken}`
       }
     });
-    console.log('Risposta base64:', response.data);
     return response.data;
   } catch (error) {
     console.error('Errore durante l’upload della foto:', error);
@@ -276,7 +271,6 @@ export const usePhotoGallery = () => {
     for (const photo of photosFromDB) {
       if (photo.base64Data instanceof Blob) {
         photo.webviewPath = URL.createObjectURL(photo.base64Data);
-        console.log('questo è il blob', photo.base64Data);
       }
     }
 

@@ -11,7 +11,7 @@
     "esModuleInterop": true,
     "lib": ["ESNext", "DOM"],
     "skipLibCheck": true,
-    "types": ["googlemaps"],
+    "types": ["googlemaps", "cordova"],
     "noEmit": true,
     "paths": {
       "@/*": ["./src/*"]

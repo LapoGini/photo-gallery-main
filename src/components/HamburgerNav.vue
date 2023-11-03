@@ -56,7 +56,6 @@
     <ion-content class="ion-padding">
       <router-view />
     </ion-content>
-    <div class="toast-background" v-if="showToastBackground"></div>
   </ion-page>
 </template>
 
