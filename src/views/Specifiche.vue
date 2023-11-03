@@ -126,8 +126,7 @@ import { useStore } from "vuex";
 import { getTagsFromDB } from "@/services/db_tags.js";
 import { saveItemToDB } from "@/services/db_items.js";
 import { Filesystem, Directory } from "@capacitor/filesystem";
-import imageCompression from 'browser-image-compression';
-
+import imageCompression from "browser-image-compression";
 
 interface TagType {
   tag_type_id: string;
@@ -241,7 +240,7 @@ const timestampString = localStorage.getItem("photoTimestamp");
 const timestampInMilliseconds = Number(timestampString);
 const date = new Date(timestampInMilliseconds);
 const formattedDate = date.toISOString().slice(0, 19).replace("T", " ");
-const unixTimestamp = date.getTime(); 
+const unixTimestamp = date.getTime();
 
 const streetValue = localStorage.getItem("street");
 const addStreetValue = localStorage.getItem("addStreet");
@@ -331,19 +330,20 @@ const compressImage = async (imageBlob: Blob): Promise<Blob> => {
   const options = {
     maxSizeMB: 0.08,
     maxWidthOrHeight: 600,
-    useWebWorker: true
+    useWebWorker: true,
   };
 
-  const imageFile = new File([imageBlob], "compressedImage.jpeg", { type: "image/jpeg" });
+  const imageFile = new File([imageBlob], "compressedImage.jpeg", {
+    type: "image/jpeg",
+  });
 
   try {
     return await imageCompression(imageFile, options);
   } catch (error) {
-    console.error('Error compressing the image:', error);
+    console.error("Error compressing the image:", error);
     return imageBlob;
   }
-}
-
+};
 
 // CREA LA CARTELLA ITEMS NELLA MEOMRIA INTERNA ED ESTRENA
 const createItemsDirectory = async (directory: Directory) => {
@@ -404,15 +404,12 @@ const saveItem = async () => {
   await createItemsDirectory(Directory.Documents);
   await createItemsDirectory(Directory.ExternalStorage);
 
-
-  //const compressedItemData = ;
-  //await saveItemToDeviceMemory(itemData);
-  await saveItemToDeviceMemory({ ...itemData, base64ImageString: base64ImageStringCompressed });
-
+  await saveItemToDeviceMemory({
+    ...itemData,
+    base64ImageString: base64ImageStringCompressed,
+  });
 
   console.log("Original length:", JSON.stringify(itemData).length);
-  //console.log("Compressed length:", compressedItemData.length);
-
 
   try {
     const apiToken = store.getters.getApiToken;
@@ -431,6 +428,7 @@ const saveItem = async () => {
       savedLocally.value = false;
       clearLocalStorageExceptUser();
       await new Promise((resolve) => setTimeout(resolve, 3000));
+
       router.push("/ilTuoLuogo");
     }
   } catch (error) {
