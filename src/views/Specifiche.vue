@@ -86,7 +86,7 @@
         :is-open="isOpen"
         header="Errore"
         :sub-header="connection"
-        message="Errore durante il salvataggio della caditoia!"
+        :message="alertMessage"
         :buttons="alertButtons"
       ></ion-alert>
     </ion-content>
@@ -156,6 +156,7 @@ const savedLocally = ref(false);
 const alertButtons = ["OK"];
 const isSaving = ref(false);
 const showLoading = ref(false);
+const alertMessage = ref("");
 
 const getNetworkStatus = async () => {
   await logCurrentNetworkStatus();
@@ -432,6 +433,13 @@ const onError = (error: any) => {
   console.error("Error:", error);
 };
 
+const showAlert = (message: any) => {
+  // Imposta il messaggio di errore
+  alertMessage.value = message;
+  showLoading.value = false;
+  isOpen.value = true;
+};
+
 const saveItem = async () => {
   isSaving.value = true;
   showLoading.value = true;
@@ -488,14 +496,21 @@ const saveItem = async () => {
         },
       }
     );
-    if (response.data) {
+    console.log("3");
+    if (response.data && response.data.validation_errors) {
+      const errorMessage = response.data.validation_errors.street_id
+        ? "Errore: " + response.data.validation_errors.street_id[0]
+        : "Errore sconosciuto durante il salvataggio.";
+      showAlert(errorMessage);
+    } else if (response.data) {
+      // Gestione della risposta corretta
       showLoading.value = false;
       savedLocally.value = false;
       isSaving.value = false;
+      isOpen.value = false;
 
       clearLocalStorageExceptUser();
-      //await new Promise((resolve) => setTimeout(resolve, 3000));
-
+      await new Promise((resolve) => setTimeout(resolve, 3000));
       router.push("/ilTuoLuogo");
     }
   } catch (error) {
@@ -509,6 +524,8 @@ const saveItem = async () => {
       clearLocalStorageExceptUser();
       router.push("/ilTuoLuogo");
     } catch (errorLocalSave) {
+      showAlert("Errore generale durante il salvataggio.");
+
       console.error("Error during local saving:", errorLocalSave);
       // Mostra l'alert solo se anche il salvataggio locale fallisce
       showLoading.value = false;
