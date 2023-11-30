@@ -86,7 +86,7 @@ export const usePhotoGallery = () => {
     });
   }
 
-
+/*
   // Funzione per controllare i permessi delle notifiche
   const checkPermissions = async (): Promise<PermissionStatus> => {
     try {
@@ -130,6 +130,7 @@ export const usePhotoGallery = () => {
       console.error('Error scheduling notification:', error);
     }
   };
+  */
 
   // array utilizzato per memorizzare tutte le foto in maniera REATTIVA
   const photos = ref<UserPhoto[]>([]);
@@ -206,9 +207,9 @@ export const usePhotoGallery = () => {
 
     //stopMonitoringAccuracy();
 
-    await checkPermissions();
-    await requestPermissions();
-    await scheduleLocalNotification(imageTitle, accuracy);
+    //await checkPermissions();
+    //await requestPermissions();
+    //await scheduleLocalNotification(imageTitle, accuracy);
 
     //aggiunge l'oggetto savedFileImage all'array photos
     photos.value = [savedFileImage, ...photos.value];

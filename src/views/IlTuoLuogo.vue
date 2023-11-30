@@ -128,7 +128,7 @@ const handlePhoto = async () => {
         const base64Data = localStorage.getItem('base64Data');
         await uploadPhotoToServer(base64Data);
       }
-*/
+    */
     console.log("va avanti");
     // Navigare alla rotta successiva dopo aver confermato la foto
     router.push("/fotoMap");
