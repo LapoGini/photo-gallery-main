@@ -49,7 +49,7 @@
             </div>
           </div>
           
-          <div v-if="selectedStreet">
+          <div v-if="selectedCity && selectedStreet && selectedStreet !== null">
             <router-link :to="{ name: 'IlTuoLuogo'}" @click="removeAddStreetFromLocalStorage">
               <ion-button>
                 PROCEDI
@@ -57,7 +57,6 @@
             </router-link>
           </div>
         </div>
-        
         
       </div>
     </ion-content>
@@ -113,8 +112,9 @@ export default defineComponent({
 
     watch(selectedCity, (newValue, oldValue) => {
       console.log('Comune selezionato:', newValue);
-
+      selectedStreet.value = null;
       if (newValue !== oldValue) {
+        removeStreetFromLocalStorage();
         saveCityToLocalStorage();
         handleSelectChange();
       }
