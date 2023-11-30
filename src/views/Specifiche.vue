@@ -78,7 +78,7 @@
           ANNULLA
           <ion-icon :icon="arrowRedoCircleSharp"></ion-icon>
         </ion-button>
-        <ion-button @click="saveItem">
+        <ion-button :disabled="isSaving" @click="saveItem">
           SALVA
           <ion-icon :icon="arrowRedoCircleSharp"></ion-icon>
         </ion-button>
@@ -150,6 +150,8 @@ const selectedTags = ref<Record<string, any>>({});
 const isOpen = ref(false);
 const savedLocally = ref(false);
 const alertButtons = ["OK"];
+const isSaving = ref(false);
+
 
 const getNetworkStatus = async () => {
   await logCurrentNetworkStatus();
@@ -273,8 +275,70 @@ const connection = computed(() => {
   return savedLocally.value ? "Non sei connesso" : "Sei connesso";
 });
 
+/*
+const listFiles = async () => {
+  try {
+    const result = await Filesystem.readdir({
+      path: '',
+      directory: Directory.ExternalStorage
+    });
+    console.log('Directory list', result);
+  } catch(e) {
+    console.error('Unable to list directory', e);
+  }
+};
+
+async function readFromSDCard() {
+  try {
+    // Richiedi il permesso di leggere la memoria esterna
+    await Filesystem.requestPermissions();
+
+    // Leggi i file dalla SD card (modifica con il percorso corretto della tua SD card)
+    const result = await Filesystem.readdir({
+      path: 'storage/0403-0201/Android/data/io.ioni.starter', // Usa il percorso corretto della tua SD card
+      directory: Directory.External,
+    });
+
+    console.log('File su SD card:', result);
+  } catch(e) {
+    console.error('Errore durante la lettura dalla SD card', e);
+  }
+}
+*/
+
+const getCurrentHourFolderPath = (): string => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = (now.getMonth() + 1).toString().padStart(2, '0');
+  const day = now.getDate().toString().padStart(2, '0');
+  const hour = now.getHours().toString().padStart(2, '0');
+
+  return `${year}_${month}_${day}_${hour}`;
+};
+
+const createDirectoryIfNotExists = async (directory: Directory, path: string) => {
+  try {
+    await Filesystem.stat({ directory, path });
+  } catch (e) {
+    await Filesystem.mkdir({ directory, path, recursive: true });
+  }
+};
+
+
+
+
 const saveItemToDeviceMemory = async (data: any) => {
-  const fileName = `items/${id_da_app}.json`;
+  const hourFolderPath = getCurrentHourFolderPath();
+  const itemsFolderPath = `items/${hourFolderPath}`;
+  const fileName = `${itemsFolderPath}/${id_da_app}.json`;
+
+  // Assicurati che la cartella esista
+  await createDirectoryIfNotExists(Directory.Documents, itemsFolderPath);
+  // await createDirectoryIfNotExists(Directory.External, itemsFolderPath);
+
+  //listFiles();
+  //readFromSDCard();
+
 
   // Funzione di utilità per effettuare il salvataggio
   const saveToDirectory = async (directory: Directory) => {
@@ -308,9 +372,27 @@ const saveItemToDeviceMemory = async (data: any) => {
 
   // Salva in memoria interna
   await saveToDirectory(Directory.Documents);
+    await verifyFileSaved(fileName, Directory.Documents);
+
 
   // Salva in memoria esterna (SD)
-  await saveToDirectory(Directory.ExternalStorage);
+  //await saveToDirectory(Directory.External);
+  //  await verifyFileSaved(fileName, Directory.External);
+
+};
+
+const verifyFileSaved = async (path: any, directory: any) => {
+  try {
+    // Tenta di leggere il file appena salvato
+    const file = await Filesystem.readFile({ path, directory });
+    if (file.data) {
+      console.log(`Verifica superata: il file esiste in ${directory}`);
+    } else {
+      console.warn(`Verifica fallita: il file non esiste in ${directory}`);
+    }
+  } catch (err) {
+    console.error(`Errore durante la verifica del file in ${directory}:`, err);
+  }
 };
 
 // Funzione per convertire una stringa in base64
@@ -348,21 +430,25 @@ const compressImage = async (imageBlob: Blob): Promise<Blob> => {
 
 // CREA LA CARTELLA ITEMS NELLA MEOMRIA INTERNA ED ESTRENA
 const createItemsDirectory = async (directory: Directory) => {
+  const path = "items";
   try {
-    await Filesystem.mkdir({
-      path: "items",
-      directory: directory,
-      recursive: true,
-    });
-  } catch (err) {
-    if (err.message.includes("Directory exists")) {
-      console.log(`Directory 'items' already exists in ${directory}.`);
-    } else {
-      console.error(
-        `Error creating items directory in ${directory}:`,
-        err.message || err
-      );
+    // Controlla prima se la directory esiste
+    const info = await Filesystem.stat({ path: path, directory: directory });
+    if (info.type === 'directory') {
+      console.log(`Directory 'items' già esistente in ${directory}.`);
+      return; // Se esiste, esce dalla funzione
     }
+  } catch (err) {
+    // Se la directory non esiste, il codice continuerà dopo questo blocco catch
+    console.log(`La directory 'items' non esiste in ${directory}, procedo con la creazione.`);
+  }
+  
+  try {
+    // Ora tenta di creare la directory
+    const result = await Filesystem.mkdir({ path: path, directory: directory, recursive: true });
+    console.log('Risultato Filesystem.mkdir:', result);
+  } catch (err) {
+    console.error(`Errore durante la creazione della directory 'items' in ${directory}:`, err.message || err);
   }
 };
 
@@ -372,6 +458,8 @@ const onError = (error: any) => {
 };
 
 const saveItem = async () => {
+  isSaving.value = true;
+
   const picTitle = localStorage.getItem("photoTitle");
   const photo = await getPhotoFromDB(picTitle);
   if (!photo || !photo.base64Data) {
@@ -403,7 +491,7 @@ const saveItem = async () => {
   };
 
   await createItemsDirectory(Directory.Documents);
-  await createItemsDirectory(Directory.ExternalStorage);
+  //await createItemsDirectory(Directory.External);
 
   await saveItemToDeviceMemory({
     ...itemData,
@@ -438,6 +526,9 @@ const saveItem = async () => {
     isOpen.value = true;
     savedLocally.value = true;
     clearLocalStorageExceptUser();
+    router.push("/ilTuoLuogo");
+  } finally {
+    isSaving.value = false;
     router.push("/ilTuoLuogo");
   }
 };

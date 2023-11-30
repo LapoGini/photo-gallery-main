@@ -5,6 +5,8 @@ import { openDB } from 'idb';
 import { Geolocation } from '@capacitor/geolocation';
 import { LocalNotifications, ScheduleOptions, ScheduleResult, PermissionStatus } from '@capacitor/local-notifications';
 import axios from 'axios';
+import { Filesystem, Directory } from "@capacitor/filesystem";
+
 
 export const uploadPhotoToServer = async (imageBlob: Blob, itemPic?: string) => {
   try {
@@ -214,6 +216,24 @@ export const usePhotoGallery = () => {
     return savedFileImage;
   };
 
+  const getCurrentHourFolderPath = (): string => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const day = now.getDate().toString().padStart(2, '0');
+    const hour = now.getHours().toString().padStart(2, '0');
+  
+    return `${year}_${month}_${day}_${hour}`;
+  };
+  
+  const createDirectoryIfNotExists = async (directory: Directory, path: string) => {
+    try {
+      await Filesystem.stat({ directory, path });
+    } catch (e) {
+      await Filesystem.mkdir({ directory, path, recursive: true });
+    }
+  };
+
   const savePicture = async (photo: Photo, title: string, coordinates: any): Promise<UserPhoto> => {
     // Fetch the photo, read as a blob, then convert to base64 format
     const response = await fetch(photo.webPath!);
@@ -226,6 +246,25 @@ export const usePhotoGallery = () => {
 
     localStorage.setItem('base64Data', base64Data);
 
+    const hourFolderPath = getCurrentHourFolderPath();
+    const photosFolderPath = `Pictures/${hourFolderPath}`;
+    const photoFileName = `${title}.jpg`;
+
+    await createDirectoryIfNotExists(Directory.Documents, photosFolderPath);
+
+    if (photo.path) {
+        const originalFile = await Filesystem.readFile({ path: photo.path });
+
+        await Filesystem.writeFile({
+            path: `${photosFolderPath}/${photoFileName}`,
+            data: originalFile.data,
+            directory: Directory.Documents,
+            recursive: true
+        });
+    } else {
+        console.error("Percorso della foto non trovato");
+    }
+    
     // Aprire il database
     const db = await photoGalleryDBPromise;
 
