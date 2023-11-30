@@ -18,10 +18,11 @@
             </div>
           </div>
         </div>
+        <!--
         <div class="box-map">
           <div id="map"></div>
         </div>
-
+        -->
         <ion-button @click="goBack">
           ANNULLA
           <ion-icon :icon="arrowRedoCircleSharp"></ion-icon>
@@ -73,6 +74,7 @@ const formattedPhotoAccuracy = !isNaN(photoAccuracyNumber)
   ? photoAccuracyNumber.toFixed(2)
   : "N/A";
 
+/*
 const initMap = async () => {
   const position = {
     lat: parseFloat(photoLatitude.value || "0"),
@@ -98,6 +100,7 @@ const initMap = async () => {
     title: "Posizione della foto",
   });
 };
+*/
 
 const getNetworkStatus = async () => {
   await logCurrentNetworkStatus();
@@ -107,6 +110,7 @@ const goBack = () => {
   router.go(-1);
 };
 
+/*
 onMounted(async () => {
   if (typeof google === "undefined" || !google.maps) {
     setTimeout(() => {
@@ -116,6 +120,7 @@ onMounted(async () => {
     initMap();
   }
 });
+*/
 </script>
 
 
@@ -169,6 +174,7 @@ ion-button {
   justify-content: space-around;
 }
 
+/*
 capacitor-google-map {
   display: inline-block;
   width: 275px;
@@ -179,4 +185,5 @@ capacitor-google-map {
   height: 400px;
   width: 100%;
 }
+*/
 </style>
