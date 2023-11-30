@@ -10,9 +10,7 @@
           v-for="tagType in tags"
           :key="tagType.tag_type_id"
         >
-          <ion-label>
-            {{ tagType.tag_type_name }}:
-          </ion-label>
+          <ion-label> {{ tagType.tag_type_name }}: </ion-label>
           <ion-select
             class="my-select"
             v-model="selectedTags[tagType.tag_type_id]"
@@ -86,12 +84,17 @@
       <ion-alert
         class="alert"
         :is-open="isOpen"
-        header="Successo"
+        header="Errore"
         :sub-header="connection"
-        message="La caditoia è stata salvata correttamente!"
+        message="Errore durante il salvataggio della caditoia!"
         :buttons="alertButtons"
       ></ion-alert>
     </ion-content>
+    <ion-loading
+      class="loading-backdrop"
+      :is-open="showLoading"
+      message="Salvataggio in corso..."
+    ></ion-loading>
     <div class="toast-background" v-if="showToastBackground"></div>
   </ion-page>
 </template>
@@ -121,6 +124,7 @@ import {
   uploadPhotoToServer,
 } from "@/composables/usePhotoGallery";
 import { useNetwork } from "@/composables/useNetwork";
+import { IonLoading } from "@ionic/vue";
 import axios from "axios";
 import { ref, onMounted, watch, computed } from "vue";
 import { useStore } from "vuex";
@@ -151,7 +155,7 @@ const isOpen = ref(false);
 const savedLocally = ref(false);
 const alertButtons = ["OK"];
 const isSaving = ref(false);
-
+const showLoading = ref(false);
 
 const getNetworkStatus = async () => {
   await logCurrentNetworkStatus();
@@ -275,57 +279,26 @@ const connection = computed(() => {
   return savedLocally.value ? "Non sei connesso" : "Sei connesso";
 });
 
-/*
-const listFiles = async () => {
-  try {
-    const result = await Filesystem.readdir({
-      path: '',
-      directory: Directory.ExternalStorage
-    });
-    console.log('Directory list', result);
-  } catch(e) {
-    console.error('Unable to list directory', e);
-  }
-};
-
-async function readFromSDCard() {
-  try {
-    // Richiedi il permesso di leggere la memoria esterna
-    await Filesystem.requestPermissions();
-
-    // Leggi i file dalla SD card (modifica con il percorso corretto della tua SD card)
-    const result = await Filesystem.readdir({
-      path: 'storage/0403-0201/Android/data/io.ioni.starter', // Usa il percorso corretto della tua SD card
-      directory: Directory.External,
-    });
-
-    console.log('File su SD card:', result);
-  } catch(e) {
-    console.error('Errore durante la lettura dalla SD card', e);
-  }
-}
-*/
-
 const getCurrentHourFolderPath = (): string => {
   const now = new Date();
   const year = now.getFullYear();
-  const month = (now.getMonth() + 1).toString().padStart(2, '0');
-  const day = now.getDate().toString().padStart(2, '0');
-  const hour = now.getHours().toString().padStart(2, '0');
+  const month = (now.getMonth() + 1).toString().padStart(2, "0");
+  const day = now.getDate().toString().padStart(2, "0");
+  const hour = now.getHours().toString().padStart(2, "0");
 
   return `${year}_${month}_${day}_${hour}`;
 };
 
-const createDirectoryIfNotExists = async (directory: Directory, path: string) => {
+const createDirectoryIfNotExists = async (
+  directory: Directory,
+  path: string
+) => {
   try {
     await Filesystem.stat({ directory, path });
   } catch (e) {
     await Filesystem.mkdir({ directory, path, recursive: true });
   }
 };
-
-
-
 
 const saveItemToDeviceMemory = async (data: any) => {
   const hourFolderPath = getCurrentHourFolderPath();
@@ -338,7 +311,6 @@ const saveItemToDeviceMemory = async (data: any) => {
 
   //listFiles();
   //readFromSDCard();
-
 
   // Funzione di utilità per effettuare il salvataggio
   const saveToDirectory = async (directory: Directory) => {
@@ -372,13 +344,7 @@ const saveItemToDeviceMemory = async (data: any) => {
 
   // Salva in memoria interna
   await saveToDirectory(Directory.Documents);
-    await verifyFileSaved(fileName, Directory.Documents);
-
-
-  // Salva in memoria esterna (SD)
-  //await saveToDirectory(Directory.External);
-  //  await verifyFileSaved(fileName, Directory.External);
-
+  await verifyFileSaved(fileName, Directory.Documents);
 };
 
 const verifyFileSaved = async (path: any, directory: any) => {
@@ -434,21 +400,30 @@ const createItemsDirectory = async (directory: Directory) => {
   try {
     // Controlla prima se la directory esiste
     const info = await Filesystem.stat({ path: path, directory: directory });
-    if (info.type === 'directory') {
+    if (info.type === "directory") {
       console.log(`Directory 'items' già esistente in ${directory}.`);
       return; // Se esiste, esce dalla funzione
     }
   } catch (err) {
     // Se la directory non esiste, il codice continuerà dopo questo blocco catch
-    console.log(`La directory 'items' non esiste in ${directory}, procedo con la creazione.`);
+    console.log(
+      `La directory 'items' non esiste in ${directory}, procedo con la creazione.`
+    );
   }
-  
+
   try {
     // Ora tenta di creare la directory
-    const result = await Filesystem.mkdir({ path: path, directory: directory, recursive: true });
-    console.log('Risultato Filesystem.mkdir:', result);
+    const result = await Filesystem.mkdir({
+      path: path,
+      directory: directory,
+      recursive: true,
+    });
+    console.log("Risultato Filesystem.mkdir:", result);
   } catch (err) {
-    console.error(`Errore durante la creazione della directory 'items' in ${directory}:`, err.message || err);
+    console.error(
+      `Errore durante la creazione della directory 'items' in ${directory}:`,
+      err.message || err
+    );
   }
 };
 
@@ -459,6 +434,7 @@ const onError = (error: any) => {
 
 const saveItem = async () => {
   isSaving.value = true;
+  showLoading.value = true;
 
   const picTitle = localStorage.getItem("photoTitle");
   const photo = await getPhotoFromDB(picTitle);
@@ -513,23 +489,33 @@ const saveItem = async () => {
       }
     );
     if (response.data) {
-      isOpen.value = true;
+      showLoading.value = false;
       savedLocally.value = false;
+      isSaving.value = false;
+
       clearLocalStorageExceptUser();
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      //await new Promise((resolve) => setTimeout(resolve, 3000));
 
       router.push("/ilTuoLuogo");
     }
   } catch (error) {
-    console.error("Error saving item:", error);
-    await saveItemToDB(itemData);
-    isOpen.value = true;
-    savedLocally.value = true;
-    clearLocalStorageExceptUser();
-    router.push("/ilTuoLuogo");
-  } finally {
-    isSaving.value = false;
-    router.push("/ilTuoLuogo");
+    console.error("Error during remote saving:", error);
+    try {
+      // Tentativo di salvataggio locale in caso di fallimento del salvataggio remoto
+      await saveItemToDB(itemData);
+      showLoading.value = false;
+      savedLocally.value = true;
+      isSaving.value = false;
+      clearLocalStorageExceptUser();
+      router.push("/ilTuoLuogo");
+    } catch (errorLocalSave) {
+      console.error("Error during local saving:", errorLocalSave);
+      // Mostra l'alert solo se anche il salvataggio locale fallisce
+      showLoading.value = false;
+      isOpen.value = true;
+      isSaving.value = false;
+      router.push("/ilTuoLuogo");
+    }
   }
 };
 </script>
@@ -590,11 +576,11 @@ ion-button {
 }
 
 .input-box-textarea {
-    max-height: 130px;
-    overflow-y: auto;
-    padding: 10px;
-    background-color: white;
-    color: black;
+  max-height: 130px;
+  overflow-y: auto;
+  padding: 10px;
+  background-color: white;
+  color: black;
 }
 
 .box-select,
@@ -609,5 +595,9 @@ ion-button {
 
 .alert {
   text-align: center;
+}
+
+.loading-backdrop {
+  backdrop-filter: blur(5px);
 }
 </style>
