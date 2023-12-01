@@ -5,8 +5,7 @@
         <h1>SCELTA CLIENTE</h1>
       </div>
       <div class="sub-container ion-margin">
-        <ion-item lines="full">
-          <ion-label class="ion-padding-bottom" position="floating">Scegli il cliente:</ion-label>
+        <ion-item lines="none">
           <ion-select
             v-model="selectedClient"
             interface="popover"
@@ -35,8 +34,6 @@
     <div class="toast-background" v-if="showToastBackground"></div>
   </ion-page>
 </template>
-
-
 
 <script setup lang="ts">
 import {
@@ -291,8 +288,7 @@ ion-content {
 
 .main-container {
   background-color: #a60016;
-  border-top: 3px solid rgb(255, 255, 255);
-  border-bottom: 3px solid rgb(255, 255, 255);
+  border: 3px solid white;
   width: 100%;
   padding: 20px;
   text-align: center;
@@ -311,20 +307,22 @@ h1 {
   color: white;
 }
 
+ion-item{
+  border-radius: 10px;
+}
+
 ion-label {
-  font-size: 14px;
-  font-weight: lighter;
+  display: none; /* Rimuove la label */
 }
 
 ion-select {
-  margin-top: 20px;
+  width: 100%; /* Imposta la larghezza al 100% del genitore */
+  margin-left: auto; /* Imposta il margine sinistro automatico */
+  margin-right: auto; /* Imposta il margine destro automatico */
   color: black;
-}
-
-ion-icon {
-  color: white;
-  padding-left: 0.2rem;
-  font-weight: bolder;
+  padding-left: 8px; /* Aggiunge un padding a sinistra */
+  padding-right: 8px; /* Aggiunge un padding a destra */
+  border: 3px solid white;
 }
 
 ion-button {
@@ -333,5 +331,13 @@ ion-button {
   margin-top: 20px;
   --background: #a60016;
   font-weight: bolder;
+  font-size: 16px; /* Aumenta la dimensione del testo del pulsante */
+}
+
+ion-select::part(icon) {
+  position: absolute !important;
+  right: 16px !important; /* Regola la posizione a destra */
+  top: 50% !important;
+  transform: translateY(-50%) !important;
 }
 </style>
