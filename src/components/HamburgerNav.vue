@@ -1,5 +1,5 @@
 <template>
-  <ion-menu content-id="main-content" side="end">
+  <ion-menu content-id="main-content" side="end" ref="menu" type="push">
     <ion-header>
       <ion-toolbar color="danger">
         <ion-title>Menu</ion-title>
@@ -7,31 +7,36 @@
     </ion-header>
     <ion-content class="ion-padding">
       <ion-list lines="full">
-        <router-link to="/" v-slot="{ navigate }">
-          <ion-item @click="navigate()">
+        <ion-menu-toggle auto-hide="false">
+          <ion-item button @click="navigateAndCloseMenu('/')">
+            <ion-icon name="home" slot="start"></ion-icon>
             <ion-label class="ion-text-bold">Home</ion-label>
           </ion-item>
-        </router-link>
-        <router-link to="/sceltaLuogo" v-slot="{ navigate }">
-          <ion-item @click="navigate()">
+        </ion-menu-toggle>
+        <ion-menu-toggle auto-hide="false">
+          <ion-item button @click="navigateAndCloseMenu('/sceltaLuogo')">
+            <ion-icon name="location" slot="start"></ion-icon>
             <ion-label class="ion-text-bold">Cambia Luogo</ion-label>
           </ion-item>
-        </router-link>
-        <router-link to="/sincro" v-slot="{ navigate }">
-          <ion-item @click="navigate()">
+        </ion-menu-toggle>
+        <ion-menu-toggle auto-hide="false">
+          <ion-item button @click="navigateAndCloseMenu('/sincro')">
+            <ion-icon name="sync" slot="start"></ion-icon>
             <ion-label class="ion-text-bold">Sincro</ion-label>
           </ion-item>
-        </router-link>
-        <router-link to="/scansioni" v-slot="{ navigate }">
-          <ion-item @click="navigate()">
+        </ion-menu-toggle>
+        <ion-menu-toggle auto-hide="false">
+          <ion-item button @click="navigateAndCloseMenu('/scansioni')">
+            <ion-icon name="scan" slot="start"></ion-icon>
             <ion-label class="ion-text-bold">Scansioni</ion-label>
           </ion-item>
-        </router-link>
-        <router-link to="/" v-slot="{ navigate }">
-          <ion-item @click="handleLogoutClick(navigate)">
+        </ion-menu-toggle>
+        <ion-menu-toggle auto-hide="false">
+          <ion-item button @click="handleLogoutClick">
+            <ion-icon name="log-out" slot="start"></ion-icon>
             <ion-label class="ion-text-bold">Logout</ion-label>
           </ion-item>
-        </router-link>
+        </ion-menu-toggle>
       </ion-list>
     </ion-content>
   </ion-menu>
@@ -49,6 +54,8 @@
   </ion-page>
 </template>
 
+
+
 <script lang="ts">
 import {
   IonButtons,
@@ -64,7 +71,7 @@ import {
   IonLabel,
   IonIcon,
 } from "@ionic/vue";
-import { defineComponent, PropType } from "vue";
+import { defineComponent, PropType, ref } from "vue"; // Aggiungi ref qui
 import axios from "axios";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
@@ -93,13 +100,28 @@ export default defineComponent({
   },
   setup(props) {
     const store = useStore();
-    const handleLogoutClick = async (navigate: () => void) => {
+    const router = useRouter();
+    const menu = ref<HTMLElement | null>(null);
+
+    console.log("Setup eseguito");
+
+    const navigateAndCloseMenu = (path: string) => {
+      console.log("navigateAndCloseMenu chiamato con path:", path);
+      router.push(path);
+      console.log("menu.value prima della chiusura:", menu.value);
+      if (menu.value) {
+        menu.value.dispatchEvent(new Event("ionClose")); // Simula l'evento di chiusura del menu
+        console.log("Chiusura del menu eseguita");
+      }
+    };
+
+    const handleLogoutClick = async () => {
       try {
         const apiToken = store.getters.getApiToken;
+        console.log("ApiToken prelevato:", apiToken); // Stampa l'apiToken
         localStorage.clear();
         props.updateAuthentication(false);
-        navigate();
-        console.log("lo fa nel logout:", apiToken);
+        navigateAndCloseMenu("/");
         await axios.post("https://rainwaterdrains.inyourlife.com/api/logout", {
           headers: {
             Authorization: `Bearer ${apiToken}`,
@@ -112,10 +134,13 @@ export default defineComponent({
 
     return {
       handleLogoutClick,
+      navigateAndCloseMenu,
+      menu,
     };
   },
 });
 </script>
+
 
 <style scoped>
 ion-menu::part(container) {

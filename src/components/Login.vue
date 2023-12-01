@@ -1,42 +1,50 @@
 <template>
-  <div v-if="!hasApiToken">
-    <ion-page class="ion-padding">
-      <ion-header>
-        <ion-toolbar color="primary">
-          <ion-title>Login</ion-title>
-        </ion-toolbar>
-      </ion-header>
-      <ion-content class="ion-padding">
-        <form>
-          <ion-item lines="full">
-            <ion-label position="floating">Inserisci l'email</ion-label>
-            <ion-input type="email" v-model="email"></ion-input>
-          </ion-item>
-          <ion-item lines="full">
-            <ion-label position="floating">Inserisci la password</ion-label>
-            <ion-input type="password" v-model="password"></ion-input>
-          </ion-item>
-          <ion-item
-            class="authentication-error"
-            v-if="authenticationError"
-            color="danger"
-          >
-            <ion-label>{{ errorMessage }}</ion-label>
-          </ion-item>
-          <ion-button 
-            expand="block" 
-            @click="login" 
-            :disabled="loginClicked"
-            class="ion-margin-top"
-          >
-            Login
-          </ion-button>
-        </form>
-        <p v-if="!networkStatus">Stabilisci una connessione per effettuare il login.</p>
-      </ion-content>
-    </ion-page>
-  </div>
+  <ion-page>
+    <ion-content class="ion-padding">
+      <div class="login-container">
+        <div class="login-content">
+          <ion-header>
+            <ion-toolbar>
+              <ion-title>
+                <img src="https://rainwaterdrains.inyourlife.com/build/assets/logo-zanetti-ambiente-9d418d94.png" alt="Logo" class="logo" />
+              </ion-title>
+            </ion-toolbar>
+          </ion-header>
+          <form>
+            <ion-item lines="full">
+              <ion-label position="floating">Inserisci l'email</ion-label>
+              <ion-input type="email" v-model="email"></ion-input>
+            </ion-item>
+            <ion-item lines="full">
+              <ion-label position="floating">Inserisci la password</ion-label>
+              <ion-input type="password" v-model="password"></ion-input>
+            </ion-item>
+            <ion-item
+              class="authentication-error"
+              v-if="authenticationError"
+              color="danger"
+            >
+              <ion-label>{{ errorMessage }}</ion-label>
+            </ion-item>
+            <ion-button
+              expand="full"
+              @click="login"
+              :disabled="loginClicked"
+              class="ion-margin-top"
+            >
+              Login
+            </ion-button>
+          </form>
+          <p v-if="!networkStatus">
+            Stabilisci una connessione per effettuare il login.
+          </p>
+        </div>
+      </div>
+    </ion-content>
+  </ion-page>
 </template>
+
+
 
   
 <script lang="ts">
@@ -185,5 +193,31 @@ export default defineComponent({
 <style scoped>
 .authentication-error {
   font-size: 12px;
+}
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* Centra verticalmente nello schermo */
+}
+
+.login-content {
+  max-width: 300px;
+  width: 90%; /* Larghezza massima e margini laterali */
+  text-align: center; /* Testo centrato */
+  background-color: #ffffff; /* Colore di sfondo bianco */
+  border-radius: 10px; /* Angoli arrotondati */
+  padding: 20px; /* Spaziatura interna */
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Ombra leggera */
+}
+
+/* Personalizza ulteriormente il tuo stile qui */
+
+.authentication-error {
+  font-size: 12px;
+}
+
+.logo {
+  background-color: white; /* Imposta lo sfondo del logo su bianco */
 }
 </style>

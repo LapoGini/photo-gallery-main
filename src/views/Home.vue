@@ -1,32 +1,31 @@
 <template>
   <ion-page>
-    <ion-content>
-      <div class="main-container">
+    <ion-content class="ion-padding">
+      <div class="main-container ion-text-center">
         <h1>SCELTA CLIENTE</h1>
       </div>
-      <div class="sub-container">
-        <ion-label class="choose-client text-center"> Scegli il cliente:</ion-label>
-        <ion-select
-          v-model="selectedClient"
-          label="Cliente selezionato..."
-          label-placement="floating"
-          fill="solid"
-        >
-          <ion-select-option
-            v-for="client in clients"
-            :key="client.id"
-            :value="client.id"
+      <div class="sub-container ion-margin">
+        <ion-item lines="full">
+          <ion-label class="ion-padding-bottom" position="floating">Scegli il cliente:</ion-label>
+          <ion-select
+            v-model="selectedClient"
+            interface="popover"
+            placeholder="Seleziona un cliente"
           >
-            {{ client.name }}
-          </ion-select-option>
-        </ion-select>
-        <!-- Verifica se soo state consentiti: arrivo delle notiiche, camera e localizzazione-->
-        <ion-button
-          :disabled="
-            !permissionsGranted ||
-            (selectedClient ? selectedClient.value === null : true)
-          "
+            <ion-select-option
+              v-for="client in clients"
+              :key="client.id"
+              :value="client.id"
+            >
+              {{ client.name }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
+        <ion-button 
+          expand="block" 
+          :disabled="!permissionsGranted || (selectedClient ? selectedClient.value === null : true)"
           @click="proceedToNextRoute"
+          class="ion-margin-top"
         >
           PROCEDI
           <ion-icon :icon="arrowRedoCircleSharp"></ion-icon>
@@ -36,6 +35,7 @@
     <div class="toast-background" v-if="showToastBackground"></div>
   </ion-page>
 </template>
+
 
 
 <script setup lang="ts">

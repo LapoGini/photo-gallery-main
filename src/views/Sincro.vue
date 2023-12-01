@@ -7,15 +7,22 @@
       <div class="sincro-caditoie">
         <h5>Caditoie da sincronizzare: {{ caditoieCount }}</h5>
       </div>
-      <ion-button @click="synchronizeStreetsWithServer()">
+      <ion-button
+        @click="synchronizeStreetsWithServer()"
+        :disabled="!networkStatus"
+      >
         SINCRONIZZA CADITOIE
         <ion-icon :icon="arrowRedoCircleSharp"></ion-icon>
       </ion-button>
+
+      <div v-if="!networkStatus" class="no-connection-message">
+        La funzione si abilita solamente con una connessione stabile.
+      </div>
       <ion-loading
-        class="custom-loading"
+        class="loading-backdrop"
         v-if="isLoading"
         :isOpen="true"
-        message="Synchronizing..."
+        message="Sincronizzazione..."
       ></ion-loading>
     </ion-content>
     <div class="toast-background" v-if="showToastBackground"></div>
@@ -92,16 +99,14 @@ const deleteLocalDB = async () => {
   try {
     await deleteDB("rwd_streets", {
       blocked: () => {
-        console.warn(
-          "Database deletion is blocked. Retrying in 3 seconds..."
-        );
+        console.warn("Database deletion is blocked. Retrying in 3 seconds...");
         setTimeout(deleteLocalDB, 3000);
       },
     });
   } catch (error) {
     console.error("Errore durante l'eliminazione del DB:", error);
   }
-}
+};
 
 const synchronizeItemsWithServer = async () => {
   const unsynchronizedItems = await getItemsFromDB();
@@ -152,7 +157,6 @@ const synchronizeItemsWithServer = async () => {
 
 const synchronizeStreetsWithServer = async () => {
   isLoading.value = true;
-  console.log(isLoading.value);
   const unsynchronizedStreets = await getUnsynchronizedStreetsFromDB();
   console.log("Vie NON SINCRONIZZTE", unsynchronizedStreets);
   for (const street of unsynchronizedStreets) {
@@ -263,9 +267,13 @@ ion-button {
   color: white;
 }
 
-ion-loading.custom-loading {
-  --background: #a6001689;
-  --spinner-color: #ffffff;
-  color: #ffffff;
+.loading-backdrop {
+  backdrop-filter: blur(5px);
+}
+
+.no-connection-message {
+  color: white;
+  text-align: center;
+  padding: 10px;
 }
 </style>

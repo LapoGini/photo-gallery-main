@@ -510,7 +510,7 @@ const saveItem = async () => {
       isOpen.value = false;
 
       clearLocalStorageExceptUser();
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      //await new Promise((resolve) => setTimeout(resolve, 3000));
       router.push("/ilTuoLuogo");
     }
   } catch (error) {
