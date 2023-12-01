@@ -1,29 +1,20 @@
 <template>
   <div v-if="!hasApiToken">
-    <ion-page>
+    <ion-page class="ion-padding">
       <ion-header>
-        <ion-toolbar>
+        <ion-toolbar color="primary">
           <ion-title>Login</ion-title>
         </ion-toolbar>
       </ion-header>
-      <ion-content>
+      <ion-content class="ion-padding">
         <form>
-          <ion-item>
-            <ion-input
-              label="Inserisci l'email..."
-              label-placement="floating"
-              fill="solid"
-              v-model="email"
-            ></ion-input>
+          <ion-item lines="full">
+            <ion-label position="floating">Inserisci l'email</ion-label>
+            <ion-input type="email" v-model="email"></ion-input>
           </ion-item>
-          <ion-item>
-            <ion-input
-              label="Inserisci la password..."
-              label-placement="floating"
-              fill="solid"
-              type="password"
-              v-model="password"
-            ></ion-input>
+          <ion-item lines="full">
+            <ion-label position="floating">Inserisci la password</ion-label>
+            <ion-input type="password" v-model="password"></ion-input>
           </ion-item>
           <ion-item
             class="authentication-error"
@@ -32,17 +23,21 @@
           >
             <ion-label>{{ errorMessage }}</ion-label>
           </ion-item>
-          <router-link to="/">
-            <ion-button @click="login" :disabled="loginClicked"
-              >Login</ion-button
-            >
-          </router-link>
+          <ion-button 
+            expand="block" 
+            @click="login" 
+            :disabled="loginClicked"
+            class="ion-margin-top"
+          >
+            Login
+          </ion-button>
         </form>
         <p v-if="!networkStatus">Stabilisci una connessione per effettuare il login.</p>
       </ion-content>
     </ion-page>
   </div>
 </template>
+
   
 <script lang="ts">
 import { defineComponent } from "vue";
