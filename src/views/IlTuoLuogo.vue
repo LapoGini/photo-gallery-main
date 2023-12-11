@@ -1,19 +1,19 @@
 <template>
   <ion-page>
-    <ion-content>
-      <div class="main-container">
+    <ion-content class="ion-padding">
+      <div class="main-container ion-text-center">
         <h1>IL TUO LUOGO</h1>
-        <h4>
+        <h4 class="location-details">
           {{ cityName }} ({{ cityDistrict }})
           <br />
           {{ streetName }}
         </h4>
       </div>
-      <div class="sub-container">
+      <div class="sub-container ion-margin">
         <div class="grid-container">
-          <div class="camera-box">
+          <div class="camera-box" @click="handlePhoto()">
             <ion-fab>
-              <ion-fab-button @click="handlePhoto()">
+              <ion-fab-button class="camera-button">
                 <ion-icon class="icon-tag" :icon="camera"></ion-icon>
               </ion-fab-button>
             </ion-fab>
@@ -22,7 +22,7 @@
           <div class="return-to-via">
             <ion-fab>
               <router-link to="/sceltaLuogo">
-                <ion-fab-button>
+                <ion-fab-button class="return-button">
                   <ion-icon
                     class="icon-tag"
                     :icon="arrowUndoOutline"
@@ -38,6 +38,7 @@
     <div class="toast-background" v-if="showToastBackground"></div>
   </ion-page>
 </template>
+
 
 
 <script setup lang="ts">
@@ -98,41 +99,37 @@ const getNetworkStatus = async () => {
   await logCurrentNetworkStatus();
 };
 
-const handlePhoto = async () => {
-  const photo: UserPhoto = await takePhoto();
-  if (photo) {
-    // Conferma foto scattata
-    localStorage.setItem("photoTimestamp", Date.now().toString());
-    localStorage.setItem("photoTitle", photo.title ? photo.title : "N/A");
-    localStorage.setItem(
-      "photoAltitude",
-      photo.coordinates?.coords?.altitude?.toString() || "N/A"
-    );
-    localStorage.setItem(
-      "photoLatitude",
-      photo.coordinates?.coords?.latitude?.toString() || "N/A"
-    );
-    localStorage.setItem(
-      "photoLongitude",
-      photo.coordinates?.coords?.longitude?.toString() || "N/A"
-    );
-    localStorage.setItem(
-      "photoAccuracy",
-      photo.coordinates?.coords?.accuracy?.toString() || "N/A"
-    );
-    localStorage.setItem("photoPath", photo.filepath.toString() || "N/A");
+const handlePhoto = () => {
+  takePhoto().then(photo => {
+    if (photo) {
+      // Conferma foto scattata
+      localStorage.setItem("photoTimestamp", Date.now().toString());
+      localStorage.setItem("photoTitle", photo.title ? photo.title : "N/A");
+      localStorage.setItem(
+        "photoAltitude",
+        photo.coordinates?.coords?.altitude?.toString() || "N/A"
+      );
+      localStorage.setItem(
+        "photoLatitude",
+        photo.coordinates?.coords?.latitude?.toString() || "N/A"
+      );
+      localStorage.setItem(
+        "photoLongitude",
+        photo.coordinates?.coords?.longitude?.toString() || "N/A"
+      );
+      localStorage.setItem(
+        "photoAccuracy",
+        photo.coordinates?.coords?.accuracy?.toString() || "N/A"
+      );
+      localStorage.setItem("photoPath", photo.filepath.toString() || "N/A");
 
-    /*
-      if(networkStatus.value) {
-        console.log(networkStatus);
-        const base64Data = localStorage.getItem('base64Data');
-        await uploadPhotoToServer(base64Data);
-      }
-    */
-    console.log("va avanti");
-    // Navigare alla rotta successiva dopo aver confermato la foto
-    router.push("/fotoMap");
-  }
+      console.log("va avanti");
+      // Navigare alla rotta successiva dopo aver confermato la foto
+    }
+  });
+
+  // Naviga immediatamente alla pagina /specifiche
+  router.push("/specifiche");
 };
 
 const fetchCity = async () => {
@@ -277,7 +274,10 @@ const synchronizeItemsWithServer = async () => {
     const base64ImageString = await blobToBase64(photo.base64Data);
     try {
       const apiToken = store.getters.getApiToken;
-      const responsePhoto = await uploadPhotoToServer(base64ImageString, item.pic);
+      const responsePhoto = await uploadPhotoToServer(
+        base64ImageString,
+        item.pic
+      );
       const response = await axios.post(
         "https://rainwaterdrains.inyourlife.com/api/item",
         item,
@@ -371,8 +371,7 @@ ion-content {
 
 .main-container {
   background-color: #a60016;
-  border-top: 3px solid rgb(255, 255, 255);
-  border-bottom: 3px solid rgb(255, 255, 255);
+  border: 3px solid white;
   width: 100%;
   padding: 20px;
   text-align: center;
@@ -382,6 +381,44 @@ ion-content {
 
 h1 {
   font-weight: bold;
+}
+
+.location-details {
+  margin-top: 10px;
+  font-size: 18px; /* Dimensione dei dettagli sulla posizione */
+}
+
+.grid-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: 20px; /* Spazio tra le due colonne */
+  margin-top: 20px;
+}
+
+.camera-box,
+.return-to-via {
+  background-color: #f4f4f4; /* Sfondo delle caselle */
+  border: 1px solid #ddd; /* Bordo delle caselle */
+  border-radius: 10px; /* Angoli arrotondati delle caselle */
+  text-align: center;
+  padding: 25px;
+  cursor: pointer;
+}
+
+.camera-button,
+.return-button {
+  background-color: #a60016; /* Colore del pulsante */
+  border: none;
+  border-radius: 50%; /* Pulsante circolare */
+  padding: 10px;
+  font-size: 24px;
+  color: white;
+  cursor: pointer;
+}
+
+.text {
+  font-size: 16px; /* Dimensione del testo nella casella */
+  color: black;
 }
 
 .sub-container {
