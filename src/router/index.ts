@@ -7,6 +7,7 @@ import Network from '@/views/Network.vue';
 import LocalNotification from '@/views/LocalNotification.vue';
 import IlTuoLuogo from '@/views/IlTuoLuogo.vue';
 import Sincro from '@/views/Sincro.vue';
+import Elimina from '@/views/Elimina.vue';
 import Scansioni from '@/views/Scansioni.vue';
 import Specifiche from '@/views/Specifiche.vue';
 import FotoMap from '@/views/FotoMap.vue';
@@ -43,6 +44,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/sincro',
     component: Sincro,
     name: 'Sincro',
+  },
+  {
+    path: '/elimina',
+    component: Elimina,
+    name: 'Elimina',
   },
   {
     path: '/scansioni',

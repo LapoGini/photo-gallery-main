@@ -32,6 +32,12 @@
           </ion-item>
         </ion-menu-toggle>
         <ion-menu-toggle auto-hide="false">
+          <ion-item button @click="navigateAndCloseMenu('/elimina')">
+            <ion-icon name="scan" slot="start"></ion-icon>
+            <ion-label class="ion-text-bold">Elimina</ion-label>
+          </ion-item>
+        </ion-menu-toggle>
+        <ion-menu-toggle auto-hide="false">
           <ion-item button @click="handleLogoutClick">
             <ion-icon name="log-out" slot="start"></ion-icon>
             <ion-label class="ion-text-bold">Logout</ion-label>
@@ -71,7 +77,7 @@ import {
   IonLabel,
   IonIcon,
 } from "@ionic/vue";
-import { defineComponent, PropType, ref } from "vue"; // Aggiungi ref qui
+import { defineComponent, PropType, ref, Ref, onMounted } from "vue"; // Aggiungi ref qui
 import axios from "axios";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
@@ -101,18 +107,20 @@ export default defineComponent({
   setup(props) {
     const store = useStore();
     const router = useRouter();
-    const menu = ref<HTMLElement | null>(null);
+    const menu: Ref<any> = ref(null);
 
-    console.log("Setup eseguito");
+    onMounted(() => {
+      // Assicurati che il riferimento al menu sia disponibile
+      menu.value = document.querySelector('ion-menu');
+    });
 
     const navigateAndCloseMenu = (path: string) => {
       console.log("navigateAndCloseMenu chiamato con path:", path);
-      router.push(path);
-      console.log("menu.value prima della chiusura:", menu.value);
-      if (menu.value) {
-        menu.value.dispatchEvent(new Event("ionClose")); // Simula l'evento di chiusura del menu
-        console.log("Chiusura del menu eseguita");
-      }
+      router.push(path).then(() => {
+        if (menu.value) {
+          menu.value.close(); // Chiude il menu dopo la navigazione
+        }
+      });
     };
 
     const handleLogoutClick = async () => {
