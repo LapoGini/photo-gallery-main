@@ -35,11 +35,12 @@
         </div>
       </div>
     </ion-content>
+    <div v-if="isLoading" class="loading-overlay">
+      Salvataggio immagine in corso...
+    </div>
     <div class="toast-background" v-if="showToastBackground"></div>
   </ion-page>
 </template>
-
-
 
 <script setup lang="ts">
 import {
@@ -53,9 +54,8 @@ import {
   IonFab,
   IonFabButton,
 } from "@ionic/vue";
-import { arrowRedoCircleSharp, arrowUndoOutline } from "ionicons/icons";
 import { useRouter } from "vue-router";
-import { camera } from "ionicons/icons";
+import { camera, arrowRedoCircleSharp, arrowUndoOutline } from "ionicons/icons";
 import {
   usePhotoGallery,
   UserPhoto,
@@ -89,47 +89,66 @@ const streets = ref([]);
 const cityName = ref("");
 const cityDistrict = ref("");
 const streetName = ref("");
+const isLoading = ref(false);
+
+const showLoading = () => {
+  isLoading.value = true;
+};
+
+const hideLoading = () => {
+  isLoading.value = false;
+};
+
 console.log("Nome Comune:", localStorage.getItem("city"));
 console.log(
   "Nome Strada:",
   localStorage.getItem("street") || localStorage.getItem("addStreet")
 );
 
+const goToSpecifiche = () => {
+  router.push("/specifiche");
+};
+
 const getNetworkStatus = async () => {
   await logCurrentNetworkStatus();
 };
 
-const handlePhoto = () => {
-  takePhoto().then(photo => {
-    if (photo) {
-      // Conferma foto scattata
-      localStorage.setItem("photoTimestamp", Date.now().toString());
-      localStorage.setItem("photoTitle", photo.title ? photo.title : "N/A");
-      localStorage.setItem(
-        "photoAltitude",
-        photo.coordinates?.coords?.altitude?.toString() || "N/A"
-      );
-      localStorage.setItem(
-        "photoLatitude",
-        photo.coordinates?.coords?.latitude?.toString() || "N/A"
-      );
-      localStorage.setItem(
-        "photoLongitude",
-        photo.coordinates?.coords?.longitude?.toString() || "N/A"
-      );
-      localStorage.setItem(
-        "photoAccuracy",
-        photo.coordinates?.coords?.accuracy?.toString() || "N/A"
-      );
-      localStorage.setItem("photoPath", photo.filepath.toString() || "N/A");
+const handlePhoto = async () => {
+  const loadingTimeout = setTimeout(showLoading, 1000);
+  const photo = await takePhoto();
+  if (photo) {
+    // Conferma foto scattata
+    localStorage.setItem("photoTimestamp", Date.now().toString());
+    localStorage.setItem("photoTitle", photo.title ? photo.title : "N/A");
+    localStorage.setItem(
+      "photoAltitude",
+      photo.coordinates?.coords?.altitude?.toString() || "N/A"
+    );
+    localStorage.setItem(
+      "photoLatitude",
+      photo.coordinates?.coords?.latitude?.toString() || "N/A"
+    );
+    localStorage.setItem(
+      "photoLongitude",
+      photo.coordinates?.coords?.longitude?.toString() || "N/A"
+    );
+    localStorage.setItem(
+      "photoAccuracy",
+      photo.coordinates?.coords?.accuracy?.toString() || "N/A"
+    );
+    localStorage.setItem("photoPath", photo.filepath.toString() || "N/A");
 
-      console.log("va avanti");
-      // Navigare alla rotta successiva dopo aver confermato la foto
-    }
-  });
+    console.log("va avanti");
+    clearTimeout(loadingTimeout);
 
-  // Naviga immediatamente alla pagina /specifiche
-  router.push("/specifiche");
+    hideLoading();
+    // Naviga immediatamente alla pagina /specifiche
+    router.push("/specifiche");
+  } else {
+    clearTimeout(loadingTimeout);
+
+    hideLoading();
+  }
 };
 
 const fetchCity = async () => {
@@ -363,7 +382,6 @@ onMounted(async () => {
 });
 </script>
 
-
 <style scoped>
 ion-content {
   --background: #370006;
@@ -506,5 +524,20 @@ ion-fab-button::part(native):active::after {
 
 .icon-tag {
   color: black;
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #370006;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 20px;
+  z-index: 1000;
 }
 </style>
