@@ -1,11 +1,12 @@
 <template>
   <ion-page>
-    <ion-content>
-      <div class="main-container">
+    <ion-content class="ion-padding">
+      <div class="main-container ion-text-center">
         <h1>Da sincronizzare</h1>
       </div>
-      <div class="sincro-caditoie">
-        <h5>Caditoie da sincronizzare: {{ caditoieCount }}</h5>
+      <div class="sincro-caditoie ion-padding ion-text-center">
+        <ion-badge color="primary">{{ caditoieCount }}</ion-badge>
+        <p class="ion-margin-top">Caditoie da sincronizzare</p>
       </div>
       <ion-button
         @click="synchronizeStreetsWithServer()"
@@ -94,19 +95,10 @@ const fetchAllStreets = async () => {
     console.error("Errore durante il recupero delle vie:", error);
   }
 };
-const deleteLocalDB = async () => {
+async function deleteLocalDB() {
   console.log("Inizio deleteLocalDB");
-  try {
-    await deleteDB("rwd_streets", {
-      blocked: () => {
-        console.warn("Database deletion is blocked. Retrying in 3 seconds...");
-        setTimeout(deleteLocalDB, 3000);
-      },
-    });
-  } catch (error) {
-    console.error("Errore durante l'eliminazione del DB:", error);
-  }
-};
+  await deleteDB("rwd_streets");
+}
 
 const synchronizeItemsWithServer = async () => {
   const unsynchronizedItems = await getItemsFromDB();
@@ -229,8 +221,7 @@ ion-content {
 
 .main-container {
   background-color: #a60016;
-  border-top: 3px solid rgb(255, 255, 255);
-  border-bottom: 3px solid rgb(255, 255, 255);
+  border: 3px solid white;
   width: 100%;
   padding: 20px;
   text-align: center;
@@ -241,6 +232,7 @@ ion-content {
 h1 {
   font-weight: bold;
 }
+
 
 .sub-container {
   width: 90%;
