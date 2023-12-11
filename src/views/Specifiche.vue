@@ -1,10 +1,10 @@
 <template>
   <ion-page>
-    <ion-content>
-      <div class="main-container">
-        <h1>Specifiche:</h1>
+    <ion-content class="ion-padding">
+      <div class="main-container ion-text-center">
+        <h1>SPECIFICHE:</h1>
       </div>
-      <div class="sub-container">
+      <div class="sub-container ion-margin">
         <div
           class="box-select"
           v-for="tagType in tags"
@@ -12,9 +12,9 @@
         >
           <ion-label> {{ tagType.tag_type_name }}: </ion-label>
           <ion-select
-            class="my-select"
+            class="my-select centered-popover"
             v-model="selectedTags[tagType.tag_type_id]"
-            :label="tagType.tag_type_name"
+            interface="popover"
           >
             <ion-select-option
               v-for="option in tagType.tags"
@@ -72,11 +72,11 @@
           ></ion-textarea>
         </div>
 
-        <ion-button @click="goBack">
+        <ion-button @click="goBack" expand="block" :disabled="isSaving">
           ANNULLA
           <ion-icon :icon="arrowRedoCircleSharp"></ion-icon>
         </ion-button>
-        <ion-button :disabled="isSaving" @click="saveItem">
+        <ion-button @click="saveItem" expand="block" :disabled="isSaving">
           SALVA
           <ion-icon :icon="arrowRedoCircleSharp"></ion-icon>
         </ion-button>
@@ -100,6 +100,7 @@
 </template>
 
 
+
 <script setup lang="ts">
 declare var cordova: any;
 declare var window: any;
@@ -115,6 +116,7 @@ import {
   IonInput,
   IonTextarea,
   IonAlert,
+  IonLoading,
 } from "@ionic/vue";
 import { arrowRedoCircleSharp } from "ionicons/icons";
 import { useRouter } from "vue-router";
@@ -124,7 +126,6 @@ import {
   uploadPhotoToServer,
 } from "@/composables/usePhotoGallery";
 import { useNetwork } from "@/composables/useNetwork";
-import { IonLoading } from "@ionic/vue";
 import axios from "axios";
 import { ref, onMounted, watch, computed } from "vue";
 import { useStore } from "vuex";
@@ -143,6 +144,7 @@ const { networkStatus, logCurrentNetworkStatus, showToastBackground } =
   useNetwork();
 const { getPhotoFromDB, blobToBase64 } = usePhotoGallery();
 const tags = ref<TagType[]>([]);
+const selectedTags = ref<Record<string, any>>({});
 const store = useStore();
 const router = useRouter();
 const address = ref("");
@@ -150,7 +152,6 @@ const notes = ref("");
 const height = ref("");
 const width = ref("");
 const depth = ref("");
-const selectedTags = ref<Record<string, any>>({});
 const isOpen = ref(false);
 const savedLocally = ref(false);
 const alertButtons = ["OK"];
@@ -165,6 +166,17 @@ const getNetworkStatus = async () => {
 const goBack = () => {
   router.go(-1);
 };
+
+
+onMounted(async () => {
+
+  const savedTags = localStorage.getItem("selectedTags");
+  if (savedTags) {
+    selectedTags.value = JSON.parse(savedTags);
+  }
+
+  await Promise.all([fetchTags()]);
+});
 
 const fetchTags = async () => {
   try {
@@ -181,6 +193,15 @@ const fetchTags = async () => {
   } catch (error) {
     console.error("Errore durante il recupero dei tag:", error);
     tags.value = await getTagsFromDB();
+  } finally {
+    // Imposta i valori predefiniti per selectedTags
+    if (Object.keys(selectedTags.value).length === 0) {
+      tags.value.forEach(tagType => {
+        if (tagType.tags.length > 0) {
+          selectedTags.value[tagType.tag_type_id] = tagType.tags[0].tag_id;
+        }
+      });
+    }
   }
 };
 
@@ -240,9 +261,6 @@ watch(isGrigliaSelected, (newValue) => {
   }
 });
 
-onMounted(async () => {
-  await Promise.all([fetchTags()]);
-});
 
 const timestampString = localStorage.getItem("photoTimestamp");
 const timestampInMilliseconds = Number(timestampString);
@@ -269,7 +287,8 @@ const clearLocalStorageExceptUser = () => {
       key !== "apiToken" &&
       key !== "city" &&
       key !== "street" &&
-      key !== "addStreet"
+      key !== "addStreet" &&
+      key !== "selectedTags"
     ) {
       localStorage.removeItem(key);
     }
@@ -308,10 +327,6 @@ const saveItemToDeviceMemory = async (data: any) => {
 
   // Assicurati che la cartella esista
   await createDirectoryIfNotExists(Directory.Documents, itemsFolderPath);
-  // await createDirectoryIfNotExists(Directory.External, itemsFolderPath);
-
-  //listFiles();
-  //readFromSDCard();
 
   // Funzione di utilità per effettuare il salvataggio
   const saveToDirectory = async (directory: Directory) => {
@@ -394,7 +409,6 @@ const compressImage = async (imageBlob: Blob): Promise<Blob> => {
     return imageBlob;
   }
 };
-
 // CREA LA CARTELLA ITEMS NELLA MEOMRIA INTERNA ED ESTRENA
 const createItemsDirectory = async (directory: Directory) => {
   const path = "items";
@@ -496,7 +510,6 @@ const saveItem = async () => {
         },
       }
     );
-    console.log("3");
     if (response.data && response.data.validation_errors) {
       const errorMessage = response.data.validation_errors.street_id
         ? "Errore: " + response.data.validation_errors.street_id[0]
@@ -525,7 +538,6 @@ const saveItem = async () => {
       router.push("/ilTuoLuogo");
     } catch (errorLocalSave) {
       showAlert("Errore generale durante il salvataggio.");
-
       console.error("Error during local saving:", errorLocalSave);
       // Mostra l'alert solo se anche il salvataggio locale fallisce
       showLoading.value = false;
@@ -545,8 +557,7 @@ ion-content {
 
 .main-container {
   background-color: #a60016;
-  border-top: 3px solid rgb(255, 255, 255);
-  border-bottom: 3px solid rgb(255, 255, 255);
+  border: 3px solid white;
   width: 100%;
   padding: 20px;
   text-align: center;
@@ -561,14 +572,12 @@ h1 {
 .sub-container {
   width: 90%;
   margin: auto;
-  margin-top: 50px;
+  margin-top: 30px;
   color: white;
 }
 
 ion-label {
-  font-size: 20px;
-  font-weight: bolder;
-  margin-top: 10px;
+  font-size: 15px;
 }
 
 ion-select.my-select {
@@ -576,12 +585,29 @@ ion-select.my-select {
   color: black;
   padding-left: 10px;
   padding-right: 10px;
+  border-radius: 10px;
+  margin-top: 5px;
+}
+
+.centered-popover::part(popover) {
+  left: 50% !important;
+  transform: translateX(-50%) !important;
 }
 
 ion-icon {
   color: white;
   padding-left: 0.2rem;
   font-weight: bolder;
+}
+
+ion-input {
+  border-radius: 10px;
+  margin-top: 5px;
+}
+
+ion-textarea {
+  border-radius: 10px;
+  margin-top: 5px;
 }
 
 ion-button {
