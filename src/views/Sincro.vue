@@ -46,6 +46,7 @@ import {
   countItemsInDB,
   getItemsFromDB,
   deleteItemFromDB,
+  synchronizeStreetAndItems,
 } from "@/services/db_items.js";
 import {
   usePhotoGallery,
@@ -55,6 +56,7 @@ import {
 import {
   getUnsynchronizedStreetsFromDB,
   saveStreetsToDB,
+  markStreetAsSynchronized,
 } from "@/services/db_streets.js";
 import { useNetwork } from "@/composables/useNetwork";
 import { useStore } from "vuex";
@@ -147,6 +149,13 @@ const synchronizeItemsWithServer = async () => {
   }
 };
 
+
+// QUESTA FUNZIONE PUò ESSERE MODFIFICATA, VISTO CHE QUANDO CLICCO QUA NON DEVO AGGIUNGERE NESSUNA VIA... CASOMAI LE DEVO SINCRONIZZARE
+// QUINDI IMPLEMENTARE LA LOGICA PER SINCRONIZZARE LE STRADE CHE HANNO SINCRONIZZATO FALSE
+// QUANDO L'HO SINCRONIZZATA, POSSO ANDARE A MODIFICARE DIRETTAMENTE L'ITEM COME IN SceltaLuogo PER ANDARE A MODIFICARE DIRETTAMENTE LO STREET_ID DELLA CADIOTIA
+// NON C'è BISOGNO DI ANDARE AD ELIMINARE LE STRADE DALL'INDEXEDDB E QUIDNI NEMMENO DI RIMETTERLE
+// VANNO PERO SINCRONIZZATE LE CADITOIE
+
 const synchronizeStreetsWithServer = async () => {
   isLoading.value = true;
   const unsynchronizedStreets = await getUnsynchronizedStreetsFromDB();
@@ -168,27 +177,18 @@ const synchronizeStreetsWithServer = async () => {
       );
       // Se la strada è stata aggiunta con successo al DB, aggiornala come sincronizzata in IndexedDB
       if (response.data.idNew) {
-        //await markStreetAsSynchronized(street.id, response.data.idNew);
+        await markStreetAsSynchronized(street.id, response.data.idNew);
         console.log("STRADA SINCRONIZZATA CORRETTAMENTE", response.data.idNew);
+
+        // Aggiorna anche gli items con il nuovo street_id
+        await synchronizeStreetAndItems(street.id, response.data.idNew);
+        console.log("Items aggiornati con il nuovo street_id");
       }
     } catch (error) {
       console.error("Errore durante la sincronizzazione:", error);
     }
   }
   console.log("FINE DEL CICLO");
-  try {
-    await deleteLocalDB();
-    console.log("ELIMINATE LE STRADE DALL'INDEXEDDB");
-  } catch (error) {
-    console.error("Errore in deleteLocalDB:", error);
-  }
-
-  try {
-    await fetchAllStreets();
-    console.log("RIMESSE LE STRADE NALL'INDEXEDDB");
-  } catch (error) {
-    console.error("Errore in fetchAllStreets:", error);
-  }
 
   try {
     await synchronizeItemsWithServer();
@@ -200,13 +200,6 @@ const synchronizeStreetsWithServer = async () => {
     window.location.reload();
   }
 };
-
-/*
-watch(caditoieCount, (newValue, oldValue) => {
-  console.log("Caditoie da sincronizzare:", newValue);
-  loadCaditoieCount();
-});
-*/
 
 onMounted(async () => {
   loadCaditoieCount();
