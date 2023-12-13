@@ -92,7 +92,6 @@ export async function getUnsynchronizedStreetsFromDB() {
     return store.getAll().then(streets => streets.filter(street => !street.sincronizzato));
 }
 
-/*
 export async function markStreetAsSynchronized(localId, serverId) {
     const db = await initDB();
     const tx = db.transaction(STORE_NAME_STREETS, 'readwrite');
@@ -119,4 +118,3 @@ export async function markStreetAsSynchronized(localId, serverId) {
         console.log('LASTSERVERID:', serverId, 'LOCALID:', localId);
     }
 }
-*/
