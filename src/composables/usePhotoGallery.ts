@@ -3,7 +3,6 @@ import { Camera, CameraResultType, CameraSource, Photo } from '@capacitor/camera
 import { Preferences } from '@capacitor/preferences';
 import { openDB } from 'idb';
 import { Geolocation } from '@capacitor/geolocation';
-import { LocalNotifications, ScheduleOptions, ScheduleResult, PermissionStatus } from '@capacitor/local-notifications';
 import axios from 'axios';
 import { Filesystem, Directory } from "@capacitor/filesystem";
 
@@ -26,6 +25,10 @@ export const uploadPhotoToServer = async (imageBlob: Blob, itemPic?: string) => 
         'Authorization': `Bearer ${apiToken}`
       }
     });
+
+    // Attendi 200 millisecondi dopo ogni richiesta di upload
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
     return response.data;
   } catch (error) {
     console.error('Errore durante l’upload della foto:', error);
@@ -86,52 +89,6 @@ export const usePhotoGallery = () => {
     });
   }
 
-/*
-  // Funzione per controllare i permessi delle notifiche
-  const checkPermissions = async (): Promise<PermissionStatus> => {
-    try {
-      const permissions = await LocalNotifications.checkPermissions();
-      console.log('Permissions:', permissions);
-      return permissions;
-    } catch (error) {
-      console.error('Error checking permissions:', error);
-      return null;
-    }
-  };
-
-  // Funzione per richiedere i permessi delle notifiche
-  const requestPermissions = async (): Promise<PermissionStatus> => {
-    try {
-      const permissions = await LocalNotifications.requestPermissions();
-      console.log('Requested Permissions:', permissions);
-      return permissions;
-    } catch (error) {
-      console.error('Error requesting permissions:', error);
-      return null;
-    }
-  };
-
-  // Funzione per pianificare una notifica locale
-  const scheduleLocalNotification = async (imageTitle: string, accuracy: number | string) => {
-    const options: ScheduleOptions = {
-      notifications: [
-        {
-          title: 'Nuova Foto Scattata',
-          body: `Titolo: ${imageTitle}\nAccuratezza delle coordinate: ${Number(accuracy).toFixed(2)}`,
-          id: 1,
-          schedule: { at: new Date(Date.now() + 1000) },
-        },
-      ],
-    };
-    try {
-      const result: ScheduleResult = await LocalNotifications.schedule(options);
-      console.log('Notification scheduled successfully:', result);
-    } catch (error) {
-      console.error('Error scheduling notification:', error);
-    }
-  };
-  */
-
   // array utilizzato per memorizzare tutte le foto in maniera REATTIVA
   const photos = ref<UserPhoto[]>([]);
 
@@ -189,11 +146,10 @@ export const usePhotoGallery = () => {
   const accuracy = ref<string | number>('N/A');
 
   const takePhoto = async () => {
-    //const stopMonitoringAccuracy = startAccuracyMonitoring();
     const photo = await Camera.getPhoto({
       resultType: CameraResultType.Uri,
       source: CameraSource.Camera,
-      quality: 30,
+      quality: 20,
     });
 
     // Prendere le cordinate dalla funzione getCurrrentPosition()
@@ -204,12 +160,6 @@ export const usePhotoGallery = () => {
     //crea un nome univoco per il file della foto
     const imageTitle = `img_${new Date().toISOString().replace(/:/g, "_")}`;
     const savedFileImage = await savePicture(photo, imageTitle, coordinates);
-
-    //stopMonitoringAccuracy();
-
-    //await checkPermissions();
-    //await requestPermissions();
-    //await scheduleLocalNotification(imageTitle, accuracy);
 
     //aggiunge l'oggetto savedFileImage all'array photos
     photos.value = [savedFileImage, ...photos.value];
