@@ -72,14 +72,16 @@
           ></ion-textarea>
         </div>
 
-        <ion-button @click="goBack" expand="block" :disabled="isSaving">
-          ANNULLA
-          <ion-icon :icon="arrowRedoCircleSharp"></ion-icon>
-        </ion-button>
-        <ion-button @click="saveItem" expand="block" :disabled="isSaving">
-          SALVA
-          <ion-icon :icon="arrowRedoCircleSharp"></ion-icon>
-        </ion-button>
+        <div class="button-group">
+          <ion-button @click="goBack" expand="block" :disabled="isSaving">
+            ANNULLA
+            <i class="fa-solid fa-ban icon"></i>
+          </ion-button>
+          <ion-button @click="saveItem" expand="block" :disabled="isSaving" class="margin-left-button">
+            SALVA
+            <i class="fa-regular fa-share-from-square icon"></i>
+          </ion-button>
+        </div>
       </div>
       <ion-alert
         class="alert"
@@ -102,6 +104,7 @@
 
 
 <script setup lang="ts">
+// Importa la libreria cordova-plugin-file
 declare var cordova: any;
 declare var window: any;
 
@@ -118,7 +121,6 @@ import {
   IonAlert,
   IonLoading,
 } from "@ionic/vue";
-import { arrowRedoCircleSharp } from "ionicons/icons";
 import { useRouter } from "vue-router";
 import {
   usePhotoGallery,
@@ -167,9 +169,7 @@ const goBack = () => {
   router.go(-1);
 };
 
-
 onMounted(async () => {
-
   const savedTags = localStorage.getItem("selectedTags");
   if (savedTags) {
     selectedTags.value = JSON.parse(savedTags);
@@ -196,7 +196,7 @@ const fetchTags = async () => {
   } finally {
     // Imposta i valori predefiniti per selectedTags
     if (Object.keys(selectedTags.value).length === 0) {
-      tags.value.forEach(tagType => {
+      tags.value.forEach((tagType) => {
         if (tagType.tags.length > 0) {
           selectedTags.value[tagType.tag_type_id] = tagType.tags[0].tag_id;
         }
@@ -260,7 +260,6 @@ watch(isGrigliaSelected, (newValue) => {
     depth.value = "";
   }
 });
-
 
 const timestampString = localStorage.getItem("photoTimestamp");
 const timestampInMilliseconds = Number(timestampString);
@@ -489,7 +488,6 @@ const saveItem = async () => {
   };
 
   await createItemsDirectory(Directory.Documents);
-  //await createItemsDirectory(Directory.External);
 
   await saveItemToDeviceMemory({
     ...itemData,
@@ -563,6 +561,7 @@ ion-content {
   text-align: center;
   color: white;
   font-weight: bolder;
+  border-radius: 5px;
 }
 
 h1 {
@@ -612,6 +611,9 @@ ion-textarea {
 
 ion-button {
   width: 100%;
+  --border-width: 1px;
+  --border-color: white;
+  --border-style: solid;
   --border-radius: 25px;
   margin-top: 20px;
   --background: #a60016;
@@ -642,5 +644,18 @@ ion-button {
 
 .loading-backdrop {
   backdrop-filter: blur(5px);
+}
+
+.button-group {
+  display: flex;
+  justify-content: start;
+}
+
+.margin-left-button {
+  margin-left: 10px;
+}
+
+.icon {
+  padding-left: 0.5rem;
 }
 </style>

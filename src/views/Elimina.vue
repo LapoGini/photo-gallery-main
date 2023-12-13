@@ -4,14 +4,18 @@
       <div class="main-container ion-text-center">
         <h1>Elimina dati da telefono</h1>
       </div>
-      <ion-button @click="onUserAction">Elimina caditoie</ion-button>
+      <ion-button @click="onUserAction">
+        Elimina caditoie<i class="fa-regular fa-trash-can icon-trash"></i>
+      </ion-button>
 
       <div v-if="!networkStatus" class="no-connection-message">
         La funzione si abilita solamente con una connessione stabile.
       </div>
       <div v-if="showAlert" class="success-alert">
-        Le caditoie sono state eliminate con successo dal dispositivo e il
-        gestionale è stato aggiornato.
+        <span
+          >Le {{ deletedItemCount }} caditoie sono state eliminate con successo
+          dal dispositivo e il gestionale è stato aggiornato.</span
+        >
       </div>
       <ion-loading
         class="loading-backdrop"
@@ -53,7 +57,8 @@ const router = useRouter();
 const deletable = ref([]);
 const showAlert = ref(false);
 const allOperationsSuccessful = ref(false);
-
+const isLoading = ref(false);
+const deletedItemCount = ref(0);
 
 const showSuccessAlert = () => {
   showAlert.value = true;
@@ -64,6 +69,7 @@ const showSuccessAlert = () => {
 
 const onUserAction = async () => {
   console.log("Inizio onUserAction");
+  isLoading.value = true;
   try {
     await fetchDeletable();
   } catch (error) {
@@ -99,14 +105,15 @@ const fetchDeletable = async () => {
 };
 // Funzione che esegue il processo di eliminazione per ogni item
 const processDeletableItems = async () => {
-    console.log("Inizio processDeletableItems");
-
+  console.log("Inizio processDeletableItems");
+  deletedItemCount.value = 0;
   allOperationsSuccessful.value = true;
   const deletableItems = deletable.value;
   for (let i = 0; i < deletableItems.length; i++) {
     const id = deletableItems[i];
     try {
       await deleteItemFile(id);
+      deletedItemCount.value++;
       console.log(`Item con ID: ${id} eliminato con successo.`);
     } catch (error) {
       console.error(
@@ -119,15 +126,15 @@ const processDeletableItems = async () => {
 
     // Attendere 200 millisecondi prima della prossima iterazione
     if (i < deletableItems.length - 1) {
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 300));
     }
   }
   if (allOperationsSuccessful.value) {
-    console.log('ORA');
+    console.log("ORA");
+    isLoading.value = false;
     showSuccessAlert();
   }
-    console.log("Fine processDeletableItems");
-
+  console.log("Fine processDeletableItems");
 };
 
 // estrae la data dall'id_da_app
@@ -254,6 +261,7 @@ ion-content {
   text-align: center;
   color: white;
   font-weight: bolder;
+  border-radius: 5px;
 }
 
 h1 {
@@ -275,6 +283,9 @@ ion-icon {
 
 ion-button {
   width: 100%;
+  --border-width: 1px;
+  --border-color: white;
+  --border-style: solid;
   --border-radius: 25px;
   margin-top: 20px;
   --background: #a60016;
@@ -294,9 +305,31 @@ ion-button {
 .success-alert {
   color: white;
   text-align: center;
-  padding: 10px;
-  background-color: #4caf50;
+  padding: 20px;
   margin-top: 20px;
-  border-radius: 10px;
+  border-radius: 15px;
+  font-size: 1.1rem; /* Aumenta la dimensione del testo */
+  font-weight: bold;
+  background: linear-gradient(45deg, #43a047, #66bb6a); /* Sfondo gradient */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Aggiungi ombra */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.5s; /* Animazione di comparsa */
+}
+
+/* Animazione fadeIn */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.icon-trash {
+  padding-left: 0.5rem;
 }
 </style>

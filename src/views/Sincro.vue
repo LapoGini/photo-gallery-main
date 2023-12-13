@@ -13,7 +13,7 @@
         :disabled="!networkStatus"
       >
         SINCRONIZZA CADITOIE
-        <ion-icon :icon="arrowRedoCircleSharp"></ion-icon>
+        <i class="fa-solid fa-group-arrows-rotate icon-arrow"></i>
       </ion-button>
 
       <div v-if="!networkStatus" class="no-connection-message">
@@ -39,7 +39,6 @@ import {
   IonButton,
   IonLoading,
 } from "@ionic/vue";
-import { arrowRedoCircleSharp } from "ionicons/icons";
 import { useRouter } from "vue-router";
 import { onMounted, ref, watch, defineComponent } from "vue";
 import {
@@ -149,13 +148,6 @@ const synchronizeItemsWithServer = async () => {
   }
 };
 
-
-// QUESTA FUNZIONE PUò ESSERE MODFIFICATA, VISTO CHE QUANDO CLICCO QUA NON DEVO AGGIUNGERE NESSUNA VIA... CASOMAI LE DEVO SINCRONIZZARE
-// QUINDI IMPLEMENTARE LA LOGICA PER SINCRONIZZARE LE STRADE CHE HANNO SINCRONIZZATO FALSE
-// QUANDO L'HO SINCRONIZZATA, POSSO ANDARE A MODIFICARE DIRETTAMENTE L'ITEM COME IN SceltaLuogo PER ANDARE A MODIFICARE DIRETTAMENTE LO STREET_ID DELLA CADIOTIA
-// NON C'è BISOGNO DI ANDARE AD ELIMINARE LE STRADE DALL'INDEXEDDB E QUIDNI NEMMENO DI RIMETTERLE
-// VANNO PERO SINCRONIZZATE LE CADITOIE
-
 const synchronizeStreetsWithServer = async () => {
   isLoading.value = true;
   const unsynchronizedStreets = await getUnsynchronizedStreetsFromDB();
@@ -220,12 +212,12 @@ ion-content {
   text-align: center;
   color: white;
   font-weight: bolder;
+  border-radius: 5px;
 }
 
 h1 {
   font-weight: bold;
 }
-
 
 .sub-container {
   width: 90%;
@@ -242,6 +234,9 @@ ion-icon {
 
 ion-button {
   width: 100%;
+  --border-width: 1px;
+  --border-color: white;
+  --border-style: solid;
   --border-radius: 25px;
   margin-top: 20px;
   --background: #a60016;
@@ -260,5 +255,9 @@ ion-button {
   color: white;
   text-align: center;
   padding: 10px;
+}
+
+.icon-arrow {
+  padding-left: 0.5rem;
 }
 </style>
