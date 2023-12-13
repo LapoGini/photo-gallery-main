@@ -21,6 +21,9 @@ import '@ionic/vue/css/text-transformation.css';
 import '@ionic/vue/css/flex-utils.css';
 import '@ionic/vue/css/display.css';
 
+/* Fontawesome-free */
+import '@fortawesome/fontawesome-free/css/all.min.css';
+
 /* Theme variables */
 import './theme/variables.css';
 import { defineCustomElements } from '@ionic/pwa-elements/loader';
