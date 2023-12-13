@@ -8,39 +8,39 @@
     <ion-content class="ion-padding">
       <ion-list lines="full">
         <ion-menu-toggle auto-hide="false">
-          <ion-item button @click="navigateAndCloseMenu('/')">
+          <ion-item button @click="navigateAndCloseMenu('/')" :class="{ 'ion-text-bold': currentRoute === '/' }">
             <ion-icon name="home" slot="start"></ion-icon>
-            <ion-label class="ion-text-bold">Home</ion-label>
+            <ion-label>Home</ion-label>
           </ion-item>
         </ion-menu-toggle>
         <ion-menu-toggle auto-hide="false">
-          <ion-item button @click="navigateAndCloseMenu('/sceltaLuogo')">
+          <ion-item button @click="navigateAndCloseMenu('/sceltaLuogo')" :class="{ 'ion-text-bold': currentRoute === '/sceltaLuogo' }">
             <ion-icon name="location" slot="start"></ion-icon>
-            <ion-label class="ion-text-bold">Cambia Luogo</ion-label>
+            <ion-label>Cambia Luogo</ion-label>
           </ion-item>
         </ion-menu-toggle>
         <ion-menu-toggle auto-hide="false">
-          <ion-item button @click="navigateAndCloseMenu('/sincro')">
+          <ion-item button @click="navigateAndCloseMenu('/sincro')" :class="{ 'ion-text-bold': currentRoute === '/sincro' }">
             <ion-icon name="sync" slot="start"></ion-icon>
-            <ion-label class="ion-text-bold">Sincro</ion-label>
+            <ion-label>Sincro</ion-label>
           </ion-item>
         </ion-menu-toggle>
         <ion-menu-toggle auto-hide="false">
-          <ion-item button @click="navigateAndCloseMenu('/scansioni')">
+          <ion-item button @click="navigateAndCloseMenu('/scansioni')" :class="{ 'ion-text-bold': currentRoute === '/scansioni' }">
             <ion-icon name="scan" slot="start"></ion-icon>
-            <ion-label class="ion-text-bold">Scansioni</ion-label>
+            <ion-label>Scansioni</ion-label>
           </ion-item>
         </ion-menu-toggle>
         <ion-menu-toggle auto-hide="false">
-          <ion-item button @click="navigateAndCloseMenu('/elimina')">
+          <ion-item button @click="navigateAndCloseMenu('/elimina')" :class="{ 'ion-text-bold': currentRoute === '/elimina' }">
             <ion-icon name="scan" slot="start"></ion-icon>
-            <ion-label class="ion-text-bold">Elimina</ion-label>
+            <ion-label>Elimina</ion-label>
           </ion-item>
         </ion-menu-toggle>
         <ion-menu-toggle auto-hide="false">
           <ion-item button @click="handleLogoutClick">
             <ion-icon name="log-out" slot="start"></ion-icon>
-            <ion-label class="ion-text-bold">Logout</ion-label>
+            <ion-label>Logout</ion-label>
           </ion-item>
         </ion-menu-toggle>
       </ion-list>
@@ -77,11 +77,10 @@ import {
   IonLabel,
   IonIcon,
 } from "@ionic/vue";
-import { defineComponent, PropType, ref, Ref, onMounted } from "vue"; // Aggiungi ref qui
+import { defineComponent, PropType, ref, Ref, onMounted, onBeforeUnmount } from "vue";
 import axios from "axios";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
-import { mapActions } from "vuex";
 
 export default defineComponent({
   components: {
@@ -108,10 +107,22 @@ export default defineComponent({
     const store = useStore();
     const router = useRouter();
     const menu: Ref<any> = ref(null);
+    const currentRoute = ref(router.currentRoute.value.path);
+
+    // Aggiorna currentRoute quando l'URL cambia
+    const updateCurrentRoute = () => {
+      currentRoute.value = router.currentRoute.value.path;
+    };
 
     onMounted(() => {
       // Assicurati che il riferimento al menu sia disponibile
       menu.value = document.querySelector('ion-menu');
+      updateCurrentRoute(); // Inizializza currentRoute all'avvio del componente
+      router.afterEach(updateCurrentRoute); // Aggiorna currentRoute dopo ogni cambio di rotta
+    });
+
+    onBeforeUnmount(() => {
+      router.afterEach(updateCurrentRoute); // Rimuovi l'hook afterEach prima della distruzione del componente
     });
 
     const navigateAndCloseMenu = (path: string) => {
@@ -126,11 +137,11 @@ export default defineComponent({
     const handleLogoutClick = async () => {
       try {
         const apiToken = store.getters.getApiToken;
-        console.log("ApiToken prelevato:", apiToken); // Stampa l'apiToken
+        console.log("ApiToken prelevato:", apiToken);
         localStorage.clear();
         props.updateAuthentication(false);
         navigateAndCloseMenu("/");
-        await axios.post("https://rainwaterdrains.inyourlife.com/api/logout", {
+        await axios.post("https://rainwaterdrains.inyourlife.com/api/logout", null, {
           headers: {
             Authorization: `Bearer ${apiToken}`,
           },
@@ -144,10 +155,12 @@ export default defineComponent({
       handleLogoutClick,
       navigateAndCloseMenu,
       menu,
+      currentRoute,
     };
   },
 });
 </script>
+
 
 
 <style scoped>
@@ -174,6 +187,12 @@ ion-toolbar ion-title {
   --inner-border-width: 0px;
   --border-width: 0;
 }
+
+.ion-text-bold{
+  font-weight: bolder;
+  color: #a60016;
+}
+
 </style>
 
 
