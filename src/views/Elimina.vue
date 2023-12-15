@@ -17,6 +17,11 @@
           dal dispositivo e il gestionale è stato aggiornato.</span
         >
       </div>
+      <div v-if="showAlertNotFound" class="not-found-alert">
+        <span
+          >{{ notFoundItemCount }} caditoie non trovate e non eliminate.</span
+        >
+      </div>
       <ion-loading
         class="loading-backdrop"
         v-if="isLoading"
@@ -49,6 +54,7 @@ import { Geolocation } from "@capacitor/geolocation";
 import { Capacitor } from "@capacitor/core";
 import { useRouter } from "vue-router";
 import { Filesystem, Directory } from "@capacitor/filesystem";
+import { nextTick } from "vue";
 
 const { networkStatus, logCurrentNetworkStatus, showToastBackground } =
   useNetwork();
@@ -56,20 +62,30 @@ const store = useStore();
 const router = useRouter();
 const deletable = ref([]);
 const showAlert = ref(false);
+const showAlertNotFound = ref(false);
 const allOperationsSuccessful = ref(false);
 const isLoading = ref(false);
 const deletedItemCount = ref(0);
+const notFoundItemCount = ref(0);
 
 const showSuccessAlert = () => {
   showAlert.value = true;
   setTimeout(() => {
     showAlert.value = false;
-  }, 5000); // Nasconde l'alert dopo 5 secondi
+  }, 5000);
+};
+
+const showNotFoundAlert = () => {
+  showAlertNotFound.value = true;
+  setTimeout(() => {
+    showAlertNotFound.value = false;
+  }, 5000);
 };
 
 const onUserAction = async () => {
   console.log("Inizio onUserAction");
   isLoading.value = true;
+  await nextTick();
   try {
     await fetchDeletable();
   } catch (error) {
@@ -107,6 +123,7 @@ const fetchDeletable = async () => {
 const processDeletableItems = async () => {
   console.log("Inizio processDeletableItems");
   deletedItemCount.value = 0;
+  notFoundItemCount.value = 0;
   allOperationsSuccessful.value = true;
   const deletableItems = deletable.value;
   for (let i = 0; i < deletableItems.length; i++) {
@@ -121,7 +138,6 @@ const processDeletableItems = async () => {
         error
       );
       allOperationsSuccessful.value = false;
-      break;
     }
 
     // Attendere 200 millisecondi prima della prossima iterazione
@@ -129,11 +145,15 @@ const processDeletableItems = async () => {
       await new Promise((resolve) => setTimeout(resolve, 300));
     }
   }
-  if (allOperationsSuccessful.value) {
+  if (allOperationsSuccessful.value && notFoundItemCount.value === 0) {
     console.log("ORA");
-    isLoading.value = false;
     showSuccessAlert();
+  } else if (notFoundItemCount.value > 0) {
+    console.log('ci entra????????????????????????????????????????????????????????????????');
+    showNotFoundAlert();
   }
+  console.log('notFoundItemCount.value', notFoundItemCount.value);
+  isLoading.value = false;
   console.log("Fine processDeletableItems");
 };
 
@@ -206,6 +226,7 @@ async function deleteItemFile(id: any) {
         }
       } else {
         console.log(`Il file ${fileName} non esiste nella cartella.`);
+        notFoundItemCount.value++;
       }
     } else {
       console.log("directory.files non è un array, impossibile procedere.");
@@ -218,11 +239,12 @@ async function deleteItemFile(id: any) {
   } catch (error) {
     console.error("Errore durante l'eliminazione del file:", error);
     console.error("StackTrace:", error.stack);
+    notFoundItemCount.value++;
   }
 }
 
 // CHIAMATA API PER ELIMINARE METTERE (delated_at) LA CADITOIA ELIMINATA
-async function markItemAsDeleted(id: any) {
+async function markItemAsDeleted(id: any): Promise<void> {
   try {
     const apiToken = store.getters.getApiToken;
     await axios.post(
@@ -242,7 +264,17 @@ async function markItemAsDeleted(id: any) {
     );
     console.log("Elemento segnato come eliminato:", id);
   } catch (error) {
-    console.error("Errore durante la segnalazione dell'eliminazione:", error);
+    if (error.response && error.response.status === 429) {
+      const retryAfter = error.response.headers["retry-after"]
+        ? parseInt(error.response.headers["retry-after"])
+        : 1000;
+      console.error("Errore 429, attendere e ritentare...");
+      await new Promise((resolve) => setTimeout(resolve, retryAfter));
+      return markItemAsDeleted(id);
+    } else {
+      console.error("Errore durante la segnalazione dell'eliminazione:", error);
+      throw error;
+    }
   }
 }
 </script>
@@ -302,7 +334,7 @@ ion-button {
   padding: 10px;
 }
 
-.success-alert {
+.success-alert, .not-found-alert{
   color: white;
   text-align: center;
   padding: 20px;
@@ -310,12 +342,19 @@ ion-button {
   border-radius: 15px;
   font-size: 1.1rem; /* Aumenta la dimensione del testo */
   font-weight: bold;
-  background: linear-gradient(45deg, #43a047, #66bb6a); /* Sfondo gradient */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Aggiungi ombra */
   display: flex;
   justify-content: center;
   align-items: center;
-  animation: fadeIn 0.5s; /* Animazione di comparsa */
+  animation: fadeIn 0.5s;   /* Animazione di comparsa */
+}
+
+.success-alert {
+  background: linear-gradient(45deg, #43a047, #66bb6a); /* Sfondo gradient */
+}
+
+.not-found-alert{
+  background: linear-gradient(45deg, #b80019, #a60016); /* Sfondo gradient */
 }
 
 /* Animazione fadeIn */
