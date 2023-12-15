@@ -7,12 +7,11 @@ import axios from 'axios';
 import { Filesystem, Directory } from "@capacitor/filesystem";
 
 
-export const uploadPhotoToServer = async (imageBlob: Blob, itemPic?: string) => {
+export const uploadPhotoToServer = async (imageBlob: Blob, itemPic?: string): Promise<any> => {
   try {
     const apiToken = localStorage.getItem('apiToken');
     const base64ImageString = await imageBlob;
-
-    const pic = localStorage.getItem('photoTitle') ? localStorage.getItem('photoTitle') + '.jpg' : itemPic;
+    const pic = localStorage.getItem('photoTitle') ? `${localStorage.getItem('photoTitle')}.jpg` : itemPic;
 
     const data = {
       imagedata: base64ImageString,
@@ -21,21 +20,23 @@ export const uploadPhotoToServer = async (imageBlob: Blob, itemPic?: string) => 
     };
 
     const response = await axios.post('https://rainwaterdrains.inyourlife.com/api/saveImage', data, {
-      headers: {
-        'Authorization': `Bearer ${apiToken}`
-      }
+      headers: { 'Authorization': `Bearer ${apiToken}` }
     });
-
-    // Attendi 200 millisecondi dopo ogni richiesta di upload
-    await new Promise((resolve) => setTimeout(resolve, 400));
 
     return response.data;
   } catch (error) {
-    console.error('Errore durante l’upload della foto:', error);
-    throw error;
-
+    if (error.response && error.response.status === 429) {
+      // Ritento con backoff esponenziale
+      const retryAfter = error.response.headers['retry-after'] ? parseInt(error.response.headers['retry-after']) : 1000;
+      await new Promise(resolve => setTimeout(resolve, retryAfter));
+      return uploadPhotoToServer(imageBlob, itemPic);
+    } else {
+      console.error('Errore durante l’upload della foto:', error);
+      throw error;
+    }
   }
 };
+
 
 function blobToBase64(blob: Blob) {
   return new Promise((resolve, reject) => {
