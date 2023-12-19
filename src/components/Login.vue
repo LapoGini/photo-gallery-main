@@ -1,22 +1,26 @@
 <template>
   <ion-page>
-    <ion-content class="ion-padding">
+    <ion-content class="ion-padding custom-background">
       <div class="login-container">
         <div class="login-content">
           <ion-header>
             <ion-toolbar>
               <ion-title>
-                <img src="https://rainwaterdrains.inyourlife.com/build/assets/logo-zanetti-ambiente-9d418d94.png" alt="Logo" class="logo" />
+                <img
+                  src="https://rainwaterdrains.inyourlife.com/build/assets/logo-zanetti-ambiente-9d418d94.png"
+                  alt="Logo"
+                  class="logo"
+                />
               </ion-title>
             </ion-toolbar>
           </ion-header>
-          <form>
-            <ion-item lines="full">
-              <ion-label position="floating">Inserisci l'email</ion-label>
+          <form @submit.prevent="login">
+            <ion-item lines="full" class="custom-input">
+              <ion-label position="floating">Email</ion-label>
               <ion-input type="email" v-model="email"></ion-input>
             </ion-item>
-            <ion-item lines="full">
-              <ion-label position="floating">Inserisci la password</ion-label>
+            <ion-item lines="full" class="custom-input">
+              <ion-label position="floating">Password</ion-label>
               <ion-input type="password" v-model="password"></ion-input>
             </ion-item>
             <ion-item
@@ -28,21 +32,20 @@
             </ion-item>
             <ion-button
               expand="full"
-              @click="login"
+              type="submit"
               :disabled="loginClicked"
-              class="ion-margin-top"
+              class="ion-margin-top custom-button"
             >
               Login
             </ion-button>
           </form>
-          <p v-if="!networkStatus">
-            Stabilisci una connessione per effettuare il login.
-          </p>
         </div>
       </div>
     </ion-content>
   </ion-page>
 </template>
+
+
 
 
 
@@ -94,6 +97,7 @@ export default defineComponent({
       authenticationError: false,
       hasApiToken: !!localStorage.getItem("apiToken"),
       errorMessage: "",
+      lastLoginTime: null as number | null,
     };
   },
   async mounted() {
@@ -103,6 +107,26 @@ export default defineComponent({
       axios.defaults.headers.common["Authorization"] =
         "Bearer " + savedApiToken;
     }
+
+    // Controlla se le credenziali salvate sono valide per l'autologin
+    const savedCredentialsString = localStorage.getItem("savedCredentials");
+    if (savedCredentialsString) {
+        const savedCredentials = JSON.parse(savedCredentialsString);
+        const currentTime = new Date().getTime();
+        const oneWeekInMilliseconds = 7 * 24 * 60 * 60 * 1000; // Una settimana in millisecondi
+
+        if (currentTime - savedCredentials.timestamp < oneWeekInMilliseconds) {
+            // Le credenziali sono ancora valide, procedi con l'autologin
+            this.email = savedCredentials.email;
+            this.password = atob(savedCredentials.passwordHash); // Decodifica la password
+            this.loginOffline(); // Procedi con il login offline
+        } else {
+            // Le credenziali non sono valide o sono scadute
+            console.log("Credenziali scadute o non presenti, richiesta di autenticazione");
+            localStorage.removeItem("savedCredentials");
+        }
+    }
+
     if (this.hasApiToken) {
       console.log(localStorage.getItem("apiToken"));
       try {
@@ -140,6 +164,28 @@ export default defineComponent({
         );
       }
     },
+    hashPassword(password: any) {
+      return btoa(password);
+    },
+    async loginOffline() {
+      const savedCredentials = JSON.parse(
+        localStorage.getItem("savedCredentials")
+      );
+      if (
+        savedCredentials &&
+        savedCredentials.email === this.email &&
+        savedCredentials.passwordHash === this.hashPassword(this.password)
+      ) {
+        console.log("Accesso offline riuscito");
+        this.$emit("authenticated", true);
+        // Prosegui con il login offline
+      } else {
+        console.log("Credenziali offline non corrispondenti");
+        this.authenticationError = true;
+        this.errorMessage =
+          "Errore di autenticazione offline: email o password errate!";
+      }
+    },
     async login() {
       this.errorMessage = "";
       try {
@@ -166,6 +212,19 @@ export default defineComponent({
           this.saveApiToken(apiToken);
           console.log(apiToken);
 
+          const currentTime = new Date().getTime();
+          localStorage.setItem(
+            "savedCredentials",
+            JSON.stringify({
+              email: this.email,
+              passwordHash: this.hashPassword(this.password),
+              timestamp: currentTime,
+            })
+          );
+
+          // Aggiorna il lastLoginTime
+          this.lastLoginTime = currentTime;
+
           this.eliminaDatabase("rwd_clients");
           this.eliminaDatabase("rwd_cities");
           this.eliminaDatabase("rwd_tags");
@@ -176,6 +235,7 @@ export default defineComponent({
         console.log("Errore qua:", error);
         this.authenticationError = true;
         if (error && error.message === "Network Error") {
+          this.loginOffline();
           this.errorMessage =
             "É richiesta una connessione ad internet per effettuare il login!";
         } else {
@@ -191,33 +251,74 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.authentication-error {
-  font-size: 12px;
+/* Sfondo e stile generale */
+.custom-background {
+  background: linear-gradient(
+    45deg,
+    #83a4d4,
+    #b6fbff
+  ); /* Sfondo con gradiente */
+  color: #333; /* Colore del testo */
 }
+
+/* Container del login */
 .login-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh; /* Centra verticalmente nello schermo */
+  height: 100vh;
 }
 
 .login-content {
   max-width: 300px;
-  width: 90%; /* Larghezza massima e margini laterali */
-  text-align: center; /* Testo centrato */
-  background-color: #ffffff; /* Colore di sfondo bianco */
-  border-radius: 10px; /* Angoli arrotondati */
-  padding: 20px; /* Spaziatura interna */
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Ombra leggera */
+  width: 90%;
+  text-align: center;
+  background-color: rgba(255, 255, 255, 0.8); /* Sfondo semi-trasparente */
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-/* Personalizza ulteriormente il tuo stile qui */
+/* Stile degli input */
+.custom-input {
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
 
+/* Animazione del logo */
+.animated-logo {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Animazione */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Bottone personalizzato */
+.custom-button {
+  background: linear-gradient(
+    to right,
+    #56ab2f,
+    #a8e063
+  ); /* Gradiente per il bottone */
+  color: white;
+}
+
+.custom-button:active {
+  transform: scale(0.98); /* Effetto click */
+}
+
+/* Messaggio di errore */
 .authentication-error {
   font-size: 12px;
-}
-
-.logo {
-  background-color: white; /* Imposta lo sfondo del logo su bianco */
+  color: #d9534f;
 }
 </style>
